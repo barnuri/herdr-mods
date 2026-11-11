@@ -1,7 +1,7 @@
 {
   "name": "herdr-mods",
   "version": "0.1.0",
-  "description": "Run Claude Code style mods for opencode in herdr panes: a pane beside the agent, with buttons, links and live state",
+  "description": "herdr plugin: Claude Code style mods for opencode, in a live herdr pane beside the agent",
   "type": "module",
   "license": "MIT",
   "scripts": {
@@ -11,5 +11,13 @@
   "devDependencies": {
     "@types/bun": "^1.3.14",
     "typescript": "^6.0.3"
-  }
+  },
+  "author": "barnuri",
+  "keywords": [
+    "herdr",
+    "herdr-plugin",
+    "opencode",
+    "mods",
+    "terminal"
+  ]
 }

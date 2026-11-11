@@ -1,4 +1,5 @@
 import { appendFile, mkdir, readFile, rename, writeFile } from 'node:fs/promises';
+import { randomUUID } from 'node:crypto';
 import { dirname, join } from 'node:path';
 
 /** Mod state handed from opencode to a pane: one JSON file per mod and key, under `~/.cache/herdr-mods`. */
@@ -14,11 +15,11 @@ export class StateStore {
     return join(this.home, StateStore.DIRECTORY, StateStore.safe(modId), `${StateStore.safe(key)}.json`);
   }
 
-  /** Writes through a temp file and a rename, so a pane never reads a half-written file. */
+  /** Writes through a temp file and a rename, so a pane never reads a half-written file; each write gets its own temp file. */
   async write(modId: string, key: string, state: unknown): Promise<void> {
     const path = this.pathFor(modId, key);
     await mkdir(dirname(path), { recursive: true });
-    const temp = `${path}.${process.pid}.tmp`;
+    const temp = `${path}.${randomUUID()}.tmp`;
     await writeFile(temp, JSON.stringify(state));
     await rename(temp, path);
   }

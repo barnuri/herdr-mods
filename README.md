@@ -14,14 +14,23 @@ pane, but it runs in its own terminal process, so it can draw anything a termina
 
 ## Install
 
-Requires [Bun](https://bun.sh), opencode 2, and herdr.
+herdr-mods is a herdr plugin (`barnuri.mods`). Install it from the herdr marketplace (the repo
+carries the `herdr-plugin` topic):
 
-```sh
-git clone https://github.com/barnuri/herdr-mods ~/herdr-mods
-cd ~/herdr-mods && bun install
+```bash
+herdr plugin install barnuri/herdr-mods
 ```
 
-Add the host to `~/.config/opencode/cli.json`, with the mods to load:
+Or link a local checkout for development:
+
+```bash
+git clone https://github.com/barnuri/herdr-mods
+herdr plugin link ./herdr-mods
+```
+
+It needs [Bun](https://bun.sh) (`bin/bun.sh` finds it even when herdr's `PATH` lacks it) and opencode 2.
+
+Then add the opencode host to `~/.config/opencode/cli.json`, with the mods to load:
 
 ```json
 {
@@ -39,7 +48,9 @@ Add the host to `~/.config/opencode/cli.json`, with the mods to load:
 }
 ```
 
-Start opencode inside a herdr pane. Outside herdr, the mods load but open no panes.
+Start opencode inside a herdr pane. Mod panes are herdr plugin panes (`herdr plugin pane open
+--plugin barnuri.mods --entrypoint mod`): herdr owns them, and they close when their opencode
+window closes. Outside herdr, the mods load but open no panes.
 
 ## Write a mod
 
@@ -111,10 +122,12 @@ can import a Claude Code mod's `.tsx` views directly.
 
 | Path | What it is |
 |---|---|
+| `herdr-plugin.toml` | the herdr plugin manifest: the `mod` pane entrypoint and the build step |
+| `bin/bun.sh` | runs Bun for herdr, whose `PATH` may not include it |
 | `tui.ts` | the opencode TUI plugin entry |
 | `src/modApi.ts` | the mod contract |
 | `src/opencode/opencodeHost.ts` | loads mods, runs `setup`, registers commands, opens panes |
-| `src/herdr/herdrPane.ts`, `src/herdr/paneLifecycle.ts` | herdr CLI calls, placement, open-once and reopen |
+| `src/herdr/herdrPane.ts`, `src/herdr/paneLifecycle.ts` | herdr plugin pane calls, placement (right when 140+ columns, else below), open-once and reopen |
 | `src/state/stateStore.ts` | state files in `~/.cache/herdr-mods/<mod>/<key>.json`, errors in `~/.cache/herdr-mods/errors.jsonl` |
 | `bin/pane.ts`, `src/pane/paneRunner.ts` | the pane process: loads a view, draws it, routes clicks and keys |
 | `src/render/termRenderer.ts` | draws a view tree as terminal lines with click regions |

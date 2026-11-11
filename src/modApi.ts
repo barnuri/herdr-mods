@@ -30,11 +30,12 @@ export interface ModHostApi {
   directory(): string;
   /** The session the TUI shows, when it shows one. */
   currentSessionId(): string | undefined;
-  /** Saves the state the pane for `key` renders. JSON only. */
+  /** Saves the state the pane for `key` renders. JSON only. Never rejects: a failed write is logged. */
   publish(key: string, state: unknown): Promise<void>;
   /**
    * Opens the herdr pane for `key` beside opencode. Without `isForced` it opens at most once and
    * stays closed after the person closes it; `isForced` reopens it. Returns whether a pane is open.
+   * Never rejects.
    */
   openPane(key: string, options?: { readonly isForced?: boolean }): Promise<boolean>;
   toast(message: string): void;

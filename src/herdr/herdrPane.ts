@@ -1,9 +1,11 @@
 /** A herdr pane split beside another pane, through the `herdr` CLI. */
 export class HerdrPane {
-  // herdr's ratio is the share the existing (opencode) pane keeps.
-  private static readonly SPLIT_RATIO = '0.65';
+  static readonly PLUGIN_ID = 'barnuri.mods';
+  static readonly ENTRYPOINT = 'mod';
   /** Narrower than this, the opencode pane keeps its full width and the new pane goes below it (phone-sized screens). */
   static readonly SIDE_BY_SIDE_MIN_COLUMNS = 140;
+  /** herdr opens a split at half; the new pane then gives this share back to the opencode pane. */
+  private static readonly SHRINK_AMOUNT = '0.15';
   private static readonly TIMEOUT_MS = 5000;
 
   /** The pane this process runs in, when it runs inside herdr. */
@@ -11,15 +13,29 @@ export class HerdrPane {
     return env['HERDR_ENV'] === '1' ? env['HERDR_PANE_ID'] : undefined;
   }
 
-  /** Splits `besidePaneId` (right when wide, below when narrow) without moving focus, runs `command`, and returns the new pane id. */
-  static async open(besidePaneId: string, cwd: string, command: string): Promise<string | null> {
+  /**
+   * Opens this plugin's pane entrypoint beside `besidePaneId` (right when wide, below when narrow)
+   * without moving focus, with `env` for the pane process. Returns the new pane id, or null when herdr
+   * could not open it (for example, the plugin is not installed). No `--cwd`: herdr resolves the
+   * manifest's relative pane command against the pane's cwd, so it must stay the plugin root.
+   */
+  static async open(besidePaneId: string, env: Readonly<Record<string, string>>): Promise<string | null> {
     const direction = HerdrPane.direction(await HerdrPane.herdr(['pane', 'layout', '--pane', besidePaneId]), besidePaneId);
-    const split = await HerdrPane.herdr(['pane', 'split', besidePaneId, '--direction', direction, '--ratio', HerdrPane.SPLIT_RATIO, '--cwd', cwd, '--no-focus']);
-    const paneId = HerdrPane.paneIdOf(split);
-    if (!paneId) {
-      return null;
+    const envFlags = Object.entries(env).flatMap(([name, value]) => ['--env', `${name}=${value}`]);
+    const opened = await HerdrPane.herdr([
+      'plugin', 'pane', 'open',
+      '--plugin', HerdrPane.PLUGIN_ID,
+      '--entrypoint', HerdrPane.ENTRYPOINT,
+      '--target-pane', besidePaneId,
+      '--direction', direction,
+      '--placement', 'split',
+      '--no-focus',
+      ...envFlags,
+    ]);
+    const paneId = HerdrPane.paneIdOf(opened);
+    if (paneId) {
+      await HerdrPane.herdr(['pane', 'resize', '--pane', paneId, '--direction', direction, '--amount', HerdrPane.SHRINK_AMOUNT]);
     }
-    await HerdrPane.herdr(['pane', 'run', paneId, command]);
     return paneId;
   }
 
@@ -42,22 +58,27 @@ export class HerdrPane {
     if (!output || typeof output !== 'object' || !('result' in output)) {
       return null;
     }
-    const result = output.result as { pane?: { pane_id?: unknown }; pane_id?: unknown } | null;
-    const id = result?.pane?.pane_id ?? result?.pane_id;
+    const result = output.result as { plugin_pane?: { pane?: { pane_id?: unknown } }; pane?: { pane_id?: unknown } } | null;
+    const id = result?.plugin_pane?.pane?.pane_id ?? result?.pane?.pane_id;
     return typeof id === 'string' ? id : null;
   }
 
+  /** The parsed JSON reply, or null when herdr is missing, fails, times out or prints no JSON. Never throws. */
   private static async herdr(args: readonly string[]): Promise<unknown> {
-    const child = Bun.spawn(['herdr', ...args], { stdout: 'pipe', stderr: 'pipe', stdin: 'ignore' });
-    const timer = setTimeout(() => child.kill(), HerdrPane.TIMEOUT_MS);
     try {
-      const [stdout, exitCode] = await Promise.all([new Response(child.stdout).text(), child.exited]);
-      if (exitCode !== 0) {
-        return null;
+      const child = Bun.spawn(['herdr', ...args], { stdout: 'pipe', stderr: 'pipe', stdin: 'ignore' });
+      const timer = setTimeout(() => child.kill(), HerdrPane.TIMEOUT_MS);
+      try {
+        const [stdout, exitCode] = await Promise.all([new Response(child.stdout).text(), child.exited]);
+        if (exitCode !== 0) {
+          return null;
+        }
+        return stdout.trim() === '' ? {} : JSON.parse(stdout);
+      } finally {
+        clearTimeout(timer);
       }
-      return stdout.trim() === '' ? {} : JSON.parse(stdout);
-    } finally {
-      clearTimeout(timer);
+    } catch {
+      return null;
     }
   }
 }

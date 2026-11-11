@@ -56,7 +56,8 @@ describe('HerdrPane.direction()', () => {
     expect(HerdrPane.direction(null, 'w1:p1')).toBe('right');
   });
 
-  it('reads the new pane id from a split result', () => {
+  it('reads the new pane id from a plugin pane or split result', () => {
+    expect(HerdrPane.paneIdOf({ result: { plugin_pane: { plugin_id: 'barnuri.mods', pane: { pane_id: 'w1:p3' } } } })).toBe('w1:p3');
     expect(HerdrPane.paneIdOf({ result: { pane: { pane_id: 'w1:p2' } } })).toBe('w1:p2');
     expect(HerdrPane.paneIdOf({ error: 'x' })).toBeNull();
   });

@@ -1,4 +1,3 @@
-import { join } from 'node:path';
 import type { HerdrMod, ModHostApi } from '../modApi.ts';
 import { HerdrPane } from '../herdr/herdrPane.ts';
 import { PaneLifecycle } from '../herdr/paneLifecycle.ts';
@@ -9,7 +8,7 @@ type LoadedMod = { readonly mod: HerdrMod; readonly options: Readonly<Record<str
 
 /** The herdr-mods plugin inside opencode: loads the configured mods and runs their panes in herdr. */
 export class OpencodeHost {
-  private static readonly PANE_SCRIPT = join(import.meta.dir, '..', '..', 'bin', 'pane.ts');
+  private static readonly NOT_OPENED = `the herdr pane did not open; install the plugin: herdr plugin install barnuri/herdr-mods`;
 
   private readonly store = new StateStore();
   private readonly lifecycle: PaneLifecycle | null;
@@ -17,7 +16,7 @@ export class OpencodeHost {
 
   constructor(private readonly context: HostContext) {
     const besidePaneId = HerdrPane.currentPaneId();
-    this.lifecycle = besidePaneId ? new PaneLifecycle(besidePaneId, () => this.directory()) : null;
+    this.lifecycle = besidePaneId ? new PaneLifecycle(besidePaneId) : null;
   }
 
   async register(entries: readonly ModEntry[]): Promise<() => void> {
@@ -98,8 +97,13 @@ export class OpencodeHost {
         const route = this.context.ui.router.current();
         return route.type === 'session' ? route.sessionID : undefined;
       },
-      publish: (key, state) => this.store.write(mod.id, key, state),
-      openPane: (key, openOptions) => this.openPane(mod, options, key, openOptions?.isForced === true),
+      publish: (key, state) =>
+        this.store.write(mod.id, key, state).catch((error: unknown) => this.store.logError(mod.id, `publish failed: ${OpencodeHost.describe(error)}`)),
+      openPane: (key, openOptions) =>
+        this.openPane(mod, options, key, openOptions?.isForced === true).catch(async (error: unknown) => {
+          await this.store.logError(mod.id, `open pane failed: ${OpencodeHost.describe(error)}`);
+          return false;
+        }),
       toast: (message) => this.toast(message),
       logError: (message) => this.store.logError(mod.id, message),
     };
@@ -112,10 +116,18 @@ export class OpencodeHost {
       }
       return false;
     }
-    const bun = Bun.which('bun') ?? 'bun';
-    const argv = [bun, OpencodeHost.PANE_SCRIPT, '--mod-id', mod.id, '--view', mod.pane.module, '--key', key, '--options', JSON.stringify(options), '--parent-pid', String(process.pid)];
-    const command = `exec ${argv.map((part) => `'${part.replaceAll("'", "'\\''")}'`).join(' ')}`;
-    return this.lifecycle.open(`${mod.id}:${key}`, command, isForced);
+    const env = {
+      HERDR_MODS_MOD_ID: mod.id,
+      HERDR_MODS_VIEW: mod.pane.module,
+      HERDR_MODS_KEY: key,
+      HERDR_MODS_OPTIONS: JSON.stringify(options),
+      HERDR_MODS_PARENT_PID: String(process.pid),
+    };
+    const isOpen = await this.lifecycle.open(`${mod.id}:${key}`, env, isForced);
+    if (!isOpen && isForced) {
+      this.toast(`${mod.id}: ${OpencodeHost.NOT_OPENED}`);
+    }
+    return isOpen;
   }
 
   private toast(message: string): void {

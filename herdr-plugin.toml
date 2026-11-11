@@ -1,0 +1,17 @@
+id = "barnuri.mods"
+name = "Herdr Mods"
+version = "0.1.0"
+min_herdr_version = "0.7.0"
+description = "Claude Code style mods for opencode: a live pane beside the agent, with buttons, links and hotkeys"
+platforms = ["linux", "macos"]
+
+[[build]]
+command = ["sh", "bin/bun.sh", "install"]
+
+# One pane entrypoint serves every mod; the opencode host passes the mod, view and key through
+# HERDR_MODS_* env vars on `herdr plugin pane open`.
+[[panes]]
+id = "mod"
+title = "Mod"
+placement = "split"
+command = ["sh", "bin/bun.sh", "bin/pane.ts"]

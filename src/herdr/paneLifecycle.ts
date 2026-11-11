@@ -8,25 +8,23 @@ export class PaneLifecycle {
   private readonly paneIds = new Map<string, string>();
   private readonly autoOpened = new Set<string>();
 
-  constructor(
-    private readonly besidePaneId: string,
-    private readonly cwdOf: () => string,
-  ) {}
+  constructor(private readonly besidePaneId: string) {}
 
-  async open(paneKey: string, command: string, isForced: boolean): Promise<boolean> {
+  async open(paneKey: string, env: Readonly<Record<string, string>>, isForced: boolean): Promise<boolean> {
     const known = this.paneIds.get(paneKey);
     if (!isForced && this.autoOpened.has(paneKey)) {
       return known !== undefined && (await HerdrPane.exists(known));
     }
-    this.autoOpened.add(paneKey);
     if (known && (await HerdrPane.exists(known))) {
       return true;
     }
-    const paneId = await HerdrPane.open(this.besidePaneId, this.cwdOf(), command);
-    if (paneId) {
-      this.paneIds.set(paneKey, paneId);
+    const paneId = await HerdrPane.open(this.besidePaneId, env);
+    if (!paneId) {
+      return false;
     }
-    return paneId !== null;
+    this.paneIds.set(paneKey, paneId);
+    this.autoOpened.add(paneKey);
+    return true;
   }
 
   async closeAll(): Promise<void> {
