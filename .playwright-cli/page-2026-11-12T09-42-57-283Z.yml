@@ -1,0 +1,88 @@
+- generic [ref=e2]:
+  - heading "‏0‏ ‏התראות‏" [level=2] [ref=e3]
+  - main [ref=e8]:
+    - generic [ref=e9]:
+      - link "‏LinkedIn" [ref=e13] [cursor=pointer]:
+        - /url: /
+      - generic [ref=e26]:
+        - heading "התחברות" [level=1] [ref=e27]
+        - generic [ref=e28]:
+          - paragraph [ref=e29]: חדש ב-LinkedIn?
+          - link "הצטרפות" [ref=e30] [cursor=pointer]:
+            - /url: /signup/cold-join/?fromLogin=true
+        - generic [ref=e34]:
+          - generic [ref=e35]:
+            - generic [ref=e38]:
+              - button
+            - button "התחברות באמצעות Apple" [ref=e40] [cursor=pointer]:
+              - generic [ref=e41]:
+                - figure [aria-hidden] [ref=e42]
+                - generic [ref=e43]: התחברות באמצעות Apple
+            - paragraph [ref=e45]:
+              - text: על ידי המשך, אתה מסכים ⁦
+              - link [ref=e46] [cursor=pointer]:
+                - /url: https://www.linkedin.com/legal/user-agreement/
+                - text: ⁩
+                - generic [ref=e47]:
+                  - text: ⁦
+                  - strong [ref=e48]: ⁩הסכמת המשתמש⁦
+                  - text: ⁩
+              - text: ","
+              - link [ref=e49] [cursor=pointer]:
+                - /url: https://www.linkedin.com/legal/privacy-policy/
+                - generic [ref=e50]:
+                  - text: ⁦
+                  - strong [ref=e51]: ⁩מדיניות הפרטיות⁦
+                  - text: ⁩
+                - text: ⁦
+              - text: ⁩ ו- ⁦
+              - link [ref=e52] [cursor=pointer]:
+                - /url: https://www.linkedin.com/legal/cookie-policy/
+                - text: ⁩
+                - generic [ref=e53]:
+                  - text: ⁦
+                  - strong [ref=e54]: ⁩מדיניות עוגיות⁦
+                  - text: ⁩
+                - text: ⁦
+              - text: ⁩ של LinkedIn.
+          - paragraph [ref=e56]: או
+          - generic [ref=e57]:
+            - generic [ref=e60]:
+              - generic [ref=e61]: ‏דוא”ל או טלפון‏‏
+              - textbox "‏דוא”ל או טלפון‏‏" [ref=e64]
+            - generic [ref=e66]:
+              - generic [ref=e67]: ‏סיסמה‏‏
+              - generic [ref=e69]:
+                - textbox "‏סיסמה‏‏" [ref=e70]
+                - button "הצגת סיסמה" [ref=e72] [cursor=pointer]
+            - generic [ref=e75]:
+              - link "שכחת סיסמה?" [ref=e76] [cursor=pointer]:
+                - /url: /passwordReset/
+              - generic [ref=e82]:
+                - generic [ref=e84]:
+                  - checkbox "להישאר מחובר" [checked]
+                - paragraph [ref=e87]: להישאר מחובר
+            - button "התחברות" [ref=e88] [cursor=pointer]
+      - generic [ref=e93]:
+        - paragraph [ref=e94]: ‏LinkedIn Corporation © ‏2026‏
+        - generic [ref=e95]:
+          - link [ref=e96] [cursor=pointer]:
+            - /url: https://www.linkedin.com/legal/user-agreement/
+            - paragraph [ref=e97]: הסכם המשתמש
+          - link [ref=e98] [cursor=pointer]:
+            - /url: https://www.linkedin.com/legal/privacy-policy/
+            - paragraph [ref=e99]: מדיניות הפרטיות
+          - link [ref=e100] [cursor=pointer]:
+            - /url: https://www.linkedin.com/help/linkedin/answer/a403269/
+            - paragraph [ref=e101]: הנחיות הקהילה
+          - link [ref=e102] [cursor=pointer]:
+            - /url: https://www.linkedin.com/legal/cookie-policy/
+            - paragraph [ref=e103]: מדיניות עוגיות
+          - link [ref=e104] [cursor=pointer]:
+            - /url: https://www.linkedin.com/legal/copyright-policy/
+            - paragraph [ref=e105]: מדיניות זכויות יוצרים
+          - link [ref=e106] [cursor=pointer]:
+            - /url: https://www.linkedin.com/help/linkedin/
+            - paragraph [ref=e107]: שליחת משוב
+          - button [ref=e108] [cursor=pointer]:
+            - paragraph [ref=e110]: שפה

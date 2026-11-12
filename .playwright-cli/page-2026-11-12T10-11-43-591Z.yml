@@ -1,0 +1,463 @@
+- generic [ref=f11e2]:
+  - heading "0 notifications" [level=2] [ref=f11e3]
+  - generic [ref=f11e4]:
+    - generic:
+      - generic "Skip navigation menu":
+        - button "Close jump menu" [ref=f11e6] [cursor=pointer]
+    - generic [ref=f11e9]:
+      - banner [ref=f11e11]:
+        - generic [ref=f11e14]:
+          - button [ref=f11e15] [cursor=pointer]
+          - generic [ref=f11e17]:
+            - status [ref=f11e18]
+            - search [ref=f11e19]:
+              - textbox "Search" [ref=f11e23]
+          - generic [ref=f11e25]:
+            - navigation [ref=f11e29]:
+              - list [ref=f11e30]:
+                - listitem [ref=f11e31]:
+                  - button "Home, 1 new notification" [ref=f11e32] [cursor=pointer]:
+                    - generic [ref=f11e36]: Home
+                - listitem [ref=f11e38]:
+                  - link "Network, 0 new notifications" [ref=f11e39] [cursor=pointer]:
+                    - /url: https://www.linkedin.com/mynetwork
+                    - generic [ref=f11e43]: Network
+                - listitem [ref=f11e45]:
+                  - link "Jobs, 0 new notifications" [ref=f11e46] [cursor=pointer]:
+                    - /url: https://www.linkedin.com/jobs/
+                    - generic [ref=f11e50]: Jobs
+                - listitem [ref=f11e52]:
+                  - link "Messaging, 0 new notifications" [ref=f11e53] [cursor=pointer]:
+                    - /url: https://www.linkedin.com/messaging/
+                    - generic [ref=f11e58]: Messaging
+                - listitem [ref=f11e60]:
+                  - link "Notifications, 1 new notification" [ref=f11e61] [cursor=pointer]:
+                    - /url: https://www.linkedin.com/notifications/
+                    - generic [ref=f11e62]: "1"
+                    - generic [ref=f11e66]: Notifications
+                - listitem [ref=f11e68]:
+                  - button "Me" [ref=f11e69] [cursor=pointer]:
+                    - figure [aria-hidden] [ref=f11e71]
+            - generic [ref=f11e76]:
+              - navigation [ref=f11e77]:
+                - list [ref=f11e78]:
+                  - listitem [ref=f11e79]:
+                    - button "For Business" [ref=f11e80] [cursor=pointer]
+              - button [ref=f11e88] [cursor=pointer]:
+                - paragraph [ref=f11e94]: Retry Premium
+      - main [ref=f11e96]:
+        - generic [ref=f11e98]:
+          - complementary "Sidebar" [ref=f11e99]:
+            - generic [ref=f11e102]:
+              - generic [ref=f11e106]:
+                - link [ref=f11e107] [cursor=pointer]:
+                  - /url: https://www.linkedin.com/in/barnuri/
+                  - generic [ref=f11e108]:
+                    - figure [aria-hidden] [ref=f11e110]
+                    - figure [ref=f11e112]
+                - generic [ref=f11e113]:
+                  - link [ref=f11e114] [cursor=pointer]:
+                    - /url: https://www.linkedin.com/in/barnuri/
+                    - generic "View Bar Nuri’s profile" [ref=f11e115]:
+                      - paragraph [ref=f11e118]: Bar Nuri
+                      - paragraph [ref=f11e121]: Technology Leader at AI & Innovation Team - Check Point Software Technologies, Ltd
+                      - paragraph [ref=f11e122]: Israel
+                  - link [ref=f11e123] [cursor=pointer]:
+                    - /url: https://www.linkedin.com/in/barnuri/
+                    - generic [ref=f11e124]:
+                      - figure [aria-hidden] [ref=f11e125]
+                      - paragraph [ref=f11e126]: Check Point Software
+              - link [ref=f11e131] [cursor=pointer]:
+                - /url: https://www.linkedin.com/premium/products/?upsellOrderOrigin=Tracking%3Av1%3Apremium_homepage_identity_upsell%3ANav%3AIn-Product&utype=network&referenceId=Clh1B8FHRqi5TdU0%2BGkAng%3D%3D&isSS=true&upsellSlotId=IDENTITY_MODULE
+                - generic [ref=f11e132]:
+                  - paragraph [ref=f11e133]: Expand your network with Premium
+                  - paragraph [ref=f11e138]: Retry 1 month for ₪0
+              - menu [ref=f11e141]:
+                - link [ref=f11e143] [cursor=pointer]:
+                  - /url: https://www.linkedin.com/me/profile-views/
+                  - generic "Profile viewers 101" [ref=f11e144]:
+                    - paragraph [ref=f11e146]: Profile viewers
+                    - paragraph [ref=f11e147]: "101"
+                - link [ref=f11e149] [cursor=pointer]:
+                  - /url: https://www.linkedin.com/analytics/creator/content/
+                  - generic "Post impressions 16" [ref=f11e150]:
+                    - paragraph [ref=f11e152]: Post impressions
+                    - paragraph [ref=f11e153]: "16"
+              - menu [ref=f11e156]:
+                - link [ref=f11e157] [cursor=pointer]:
+                  - /url: https://www.linkedin.com/my-items/saved-posts/
+                  - paragraph [ref=f11e160]: Saved items
+                - link [ref=f11e161] [cursor=pointer]:
+                  - /url: https://www.linkedin.com/groups/
+                  - paragraph [ref=f11e164]: Groups
+                - link [ref=f11e165] [cursor=pointer]:
+                  - /url: https://www.linkedin.com/mynetwork/network-manager/newsletters/
+                  - paragraph [ref=f11e168]: Newsletters
+                - link [ref=f11e169] [cursor=pointer]:
+                  - /url: https://www.linkedin.com/events/
+                  - paragraph [ref=f11e172]: Events
+          - region "Primary content" [ref=f11e173]:
+            - generic [ref=f11e174]:
+              - generic [ref=f11e178]:
+                - button [ref=f11e180] [cursor=pointer]:
+                  - generic "For you, 1 of 2, selected" [ref=f11e181]:
+                    - paragraph [ref=f11e182]: For you
+                - button [ref=f11e184] [cursor=pointer]:
+                  - generic "Network, 2 of 2" [ref=f11e185]:
+                    - paragraph [ref=f11e186]: Network
+              - list [ref=f11e188]:
+                - listitem [ref=f11e190]:
+                  - listitem [ref=f11e192]:
+                    - generic [ref=f11e198]:
+                      - generic [ref=f11e199]:
+                        - generic [ref=f11e200]:
+                          - generic [ref=f11e201]:
+                            - paragraph [ref=f11e202]: 80% of professionals find networking key to career success.
+                            - paragraph [ref=f11e203]: Grow your connections with Premium.
+                          - link "Try Premium for ₪0" [ref=f11e204] [cursor=pointer]:
+                            - /url: https://www.linkedin.com/premium/products/?upsellOrderOrigin=Tracking%3Av1%3Apremium_feed_launchpad_upsell_general%3AFeed%3AIn-Product&utype=network&referenceId=mqp%2BR%2BDVSGG3kbS3Xbe%2Fhw%3D%3D&isSS=false&upsellSlotId=LAUNCHPAD_V2
+                        - paragraph [ref=f11e207]: 1-month free trial. Cancel anytime.
+                      - generic [ref=f11e208]:
+                        - figure [aria-hidden] [ref=f11e209]
+                        - figure [aria-hidden] [ref=f11e210]
+                    - button "Dismiss" [ref=f11e211] [cursor=pointer]
+                - listitem [ref=f11e215]:
+                  - generic [ref=f11e216]:
+                    - generic [ref=f11e217]:
+                      - link [ref=f11e219] [cursor=pointer]:
+                        - /url: https://www.linkedin.com/in/barnuri/
+                        - figure [aria-hidden] [ref=f11e220]
+                      - button [ref=f11e222] [cursor=pointer]:
+                        - generic "Start a post" [ref=f11e223]:
+                          - generic [ref=f11e225]:
+                            - paragraph [ref=f11e226]: Start a post
+                            - generic:
+                              - paragraph
+                    - generic [ref=f11e227]:
+                      - button [ref=f11e228] [cursor=pointer]:
+                        - paragraph [ref=f11e231]: Video
+                      - button [ref=f11e232] [cursor=pointer]:
+                        - paragraph [ref=f11e235]: Photo
+                      - link [ref=f11e236] [cursor=pointer]:
+                        - /url: /article/new/
+                        - paragraph [ref=f11e239]: Write article
+                - listitem [ref=f11e244]:
+                  - generic [ref=f11e246]:
+                    - heading "Feed post" [level=2]
+                    - generic [ref=f11e248]:
+                      - link [ref=f11e251] [cursor=pointer]:
+                        - /url: https://www.linkedin.com/in/eliraz-cohen-58bb5358/
+                        - figure [ref=f11e252]
+                      - generic [ref=f11e254]:
+                        - link [ref=f11e257] [cursor=pointer]:
+                          - /url: https://www.linkedin.com/in/eliraz-cohen-58bb5358/
+                          - generic "Eliraz Cohen Verified Profile 1st" [ref=f11e261]:
+                            - paragraph [ref=f11e264]: Eliraz Cohen
+                            - paragraph [ref=f11e266]:
+                              - generic [ref=f11e267]: • 1st
+                        - paragraph [ref=f11e271]: Software Engineer
+                        - paragraph [ref=f11e273]:
+                          - generic [ref=f11e274]: 18h • Edited •
+                        - link "Eliraz Cohen Verified Profile 1st":
+                          - /url: https://www.linkedin.com/in/eliraz-cohen-58bb5358/
+                      - button "Open control menu for post by Eliraz Cohen" [ref=f11e276] [cursor=pointer]
+                      - button "Hide post by Eliraz Cohen" [ref=f11e279] [cursor=pointer]
+                    - paragraph [ref=f11e282]:
+                      - generic [ref=f11e283]:
+                        - text: Finally, out of stealth! 🚀 Almost a year since I joined Edelbyte, and I still can't believe how much we've accomplished. Can't wait to see what the future holds! Want to see what we've built? Come say hi at our re:Invent booth in Vegas 👋 Oh, and we're hiring!
+                        - link "Open https://lnkd.in/p/eYsDkPRR" [ref=f11e286] [cursor=pointer]:
+                          - /url: https://www.linkedin.com/safety/go/?url=https%3A%2F%2Flnkd%2Ein%2Fp%2FeYsDkPRR&urlhash=ADJ2&mt=1ZiOOhfILxzgdGYIHs_T-X5HG9uf_OTQmEqKI_TWd4xp5_7GL62sLedwU7z3NPRpTiq7fgUb_CTYKvOtUQydBCjJGHCmGVwaNEs6Iw4uJlMoos3YVgHpDjbK9L_2GtLh9WBs74XGXIXhcpIJVobXPZjhsBX4n7yT&isSdui=true
+                          - strong [ref=f11e287]: https://lnkd.in/p/eYsDkPRR
+                    - link [ref=f11e289] [cursor=pointer]:
+                      - /url: https://www.linkedin.com/
+                      - figure [ref=f11e290]:
+                        - img "View image" [ref=f11e291]
+                    - generic [ref=f11e292]:
+                      - link "Andrey Blonski and 52 others reacted" [ref=f11e293] [cursor=pointer]:
+                        - /url: https://www.linkedin.com/
+                        - paragraph [ref=f11e299]:
+                          - generic [ref=f11e300]:
+                            - generic [ref=f11e301]: Andrey Blonski and 52 others reacted
+                            - generic [aria-hidden] [ref=f11e302]: Andrey Blonski and 52 others
+                      - button "3 comments" [ref=f11e304] [cursor=pointer]:
+                        - paragraph [ref=f11e305]:
+                          - generic [ref=f11e306]: 3 comments
+                          - generic [aria-hidden] [ref=f11e307]: 3 comments
+                    - generic [ref=f11e308]:
+                      - generic [ref=f11e309]:
+                        - 'button "Reaction button state: no reaction" [ref=f11e312] [cursor=pointer]':
+                          - generic [ref=f11e313]: Like
+                        - button "Open reactions menu"
+                      - button "Comment" [ref=f11e316] [cursor=pointer]
+                      - button "Repost" [ref=f11e321] [cursor=pointer]
+                      - link "Send" [ref=f11e326] [cursor=pointer]:
+                        - /url: https://www.linkedin.com/
+                - listitem [ref=f11e335]:
+                  - generic [ref=f11e337]:
+                    - heading "Feed post" [level=2]
+                    - generic [ref=f11e339]:
+                      - link [ref=f11e342] [cursor=pointer]:
+                        - /url: https://www.linkedin.com/company/cambridge-intelligence/
+                        - figure [ref=f11e343]
+                      - generic [ref=f11e345]:
+                        - link [ref=f11e348] [cursor=pointer]:
+                          - /url: https://www.linkedin.com/company/cambridge-intelligence/
+                          - generic "Cambridge Intelligence Verified" [ref=f11e352]:
+                            - paragraph [ref=f11e355]: Cambridge Intelligence
+                            - paragraph [ref=f11e357]
+                        - paragraph [ref=f11e362]: 11,514 followers
+                        - paragraph [ref=f11e364]: Promoted
+                        - link "Cambridge Intelligence Verified":
+                          - /url: https://www.linkedin.com/company/cambridge-intelligence/
+                      - button "Open control menu for post by Cambridge Intelligence" [ref=f11e365] [cursor=pointer]
+                    - generic [ref=f11e370]:
+                      - paragraph [ref=f11e371]:
+                        - generic [ref=f11e372]: One phone call. Two devices moving across a city. A shared destination.How can investigators connect these events to identify patterns worth exploring?Watch our 5-minute data fusion investigations showcase to see how graph, timeline and geospatial visualizations bring connected data into a single investigative workflow.
+                      - generic [ref=f11e374]:
+                        - link [ref=f11e376] [cursor=pointer]:
+                          - /url: https://www.linkedin.com/
+                          - figure [ref=f11e377]:
+                            - img "See the full investigation unfold View Lead Gen Form" [ref=f11e378]
+                        - link "See the full investigation unfold cambridge-intelligence.com" [ref=f11e379] [cursor=pointer]:
+                          - /url: https://www.linkedin.com/
+                          - generic [ref=f11e381]:
+                            - paragraph [ref=f11e383]:
+                              - generic [ref=f11e384]:
+                                - generic [ref=f11e385]: See the full investigation unfold
+                                - text: See the full investigation unfold
+                            - paragraph [ref=f11e387]: cambridge-intelligence.com
+                      - link "Learn more" [ref=f11e388] [cursor=pointer]:
+                        - /url: https://www.linkedin.com/
+                    - link "8 reactions" [ref=f11e392] [cursor=pointer]:
+                      - /url: https://www.linkedin.com/
+                      - paragraph [ref=f11e396]:
+                        - generic [ref=f11e397]:
+                          - generic [ref=f11e398]: 8 reactions
+                          - text: "8"
+                    - generic [ref=f11e399]:
+                      - generic [ref=f11e400]:
+                        - 'button "Reaction button state: no reaction" [ref=f11e403] [cursor=pointer]':
+                          - generic [ref=f11e404]: Like
+                        - button "Open reactions menu"
+                      - button "Comment" [ref=f11e407] [cursor=pointer]
+                      - button "Repost" [ref=f11e412] [cursor=pointer]
+                      - link "Send" [ref=f11e417] [cursor=pointer]:
+                        - /url: https://www.linkedin.com/
+                - listitem [ref=f11e426]:
+                  - generic [ref=f11e428]:
+                    - heading "Feed post" [level=2]
+                    - generic [ref=f11e430]:
+                      - generic [ref=f11e431]:
+                        - link [ref=f11e434] [cursor=pointer]:
+                          - /url: https://www.linkedin.com/in/shahar-polak/
+                          - figure [ref=f11e435]
+                        - paragraph [ref=f11e437]:
+                          - generic [ref=f11e438]:
+                            - link "View Shahar Polak’s profile" [ref=f11e439] [cursor=pointer]:
+                              - /url: https://www.linkedin.com/in/shahar-polak/
+                              - strong [ref=f11e440]: Shahar Polak
+                            - text: commented
+                      - button "Open control menu for post by Dean Langsam 🍁🌕" [ref=f11e441] [cursor=pointer]
+                      - button "Hide post by Dean Langsam 🍁🌕" [ref=f11e444] [cursor=pointer]
+                    - generic [ref=f11e447]:
+                      - link [ref=f11e450] [cursor=pointer]:
+                        - /url: https://www.linkedin.com/in/deanla/
+                        - figure [ref=f11e451]
+                      - generic [ref=f11e453]:
+                        - link [ref=f11e456] [cursor=pointer]:
+                          - /url: https://www.linkedin.com/in/deanla/
+                          - generic "Dean Langsam 🍁🌕 Verified Profile 2nd" [ref=f11e460]:
+                            - paragraph [ref=f11e463]: Dean Langsam 🍁🌕
+                            - paragraph [ref=f11e465]:
+                              - generic [ref=f11e466]: • 2nd
+                        - paragraph [ref=f11e470]: Data Scientist (@Neo), Swag-First Engineering, Dad Joke Enthusiast, MCP Contrarian, Linkedin Deinfluencer, Ex-Wing Starfighter
+                        - paragraph [ref=f11e472]:
+                          - generic [ref=f11e473]: 15h •
+                        - link "Dean Langsam 🍁🌕 Verified Profile 2nd":
+                          - /url: https://www.linkedin.com/in/deanla/
+                      - button "Invite Dean Langsam 🍁🌕 to connect" [ref=f11e478] [cursor=pointer]:
+                        - generic [ref=f11e479]: Connect
+                    - paragraph [ref=f11e483]:
+                      - generic [ref=f11e484]: איזה פצצה הסופגניות החדשות של רולדין! וגם המחיר שפוי.
+                    - link [ref=f11e486] [cursor=pointer]:
+                      - /url: https://www.linkedin.com/
+                      - figure [ref=f11e487]:
+                        - img "View image" [ref=f11e488]
+                    - generic [ref=f11e489]:
+                      - link "Eti Fakiri and 391 others reacted" [ref=f11e490] [cursor=pointer]:
+                        - /url: https://www.linkedin.com/
+                        - paragraph [ref=f11e495]:
+                          - generic [ref=f11e496]:
+                            - generic [ref=f11e497]: Eti Fakiri and 391 others reacted
+                            - generic [aria-hidden] [ref=f11e498]: Eti Fakiri and 391 others
+                      - button "27 comments" [ref=f11e500] [cursor=pointer]:
+                        - paragraph [ref=f11e501]:
+                          - generic [ref=f11e502]: 27 comments
+                          - generic [aria-hidden] [ref=f11e503]: 27 comments
+                    - generic [ref=f11e504]:
+                      - generic [ref=f11e505]:
+                        - 'button "Reaction button state: no reaction" [ref=f11e508] [cursor=pointer]':
+                          - generic [ref=f11e509]: Like
+                        - button "Open reactions menu"
+                      - button "Comment" [ref=f11e512] [cursor=pointer]
+                      - button "Repost" [ref=f11e517] [cursor=pointer]
+                      - link "Send" [ref=f11e522] [cursor=pointer]:
+                        - /url: https://www.linkedin.com/
+                  - generic [ref=f11e528]:
+                    - generic [ref=f11e533]:
+                      - link [ref=f11e537] [cursor=pointer]:
+                        - /url: https://www.linkedin.com/in/shahar-polak/
+                        - figure [ref=f11e538]
+                      - generic [ref=f11e539]:
+                        - generic [ref=f11e541]:
+                          - 'link "Shahar Polak Premium Profile 1st Head of Engineering @ ImagenAI | Technion MBA | AWS Superstar Award (Top 15 in Israel) | Co-host @ Israel’s #1 Tech Podcast | Author" [ref=f11e542] [cursor=pointer]':
+                            - /url: https://www.linkedin.com/in/shahar-polak/
+                            - generic [ref=f11e543]:
+                              - paragraph [ref=f11e549]:
+                                - generic [ref=f11e550]:
+                                  - generic [ref=f11e551]: Shahar Polak Premium Profile 1st
+                                  - generic [aria-hidden] [ref=f11e552]:
+                                    - text: Shahar Polak
+                                    - generic [ref=f11e555]: • 1st
+                              - paragraph [ref=f11e557]: "Head of Engineering @ ImagenAI | Technion MBA | AWS Superstar Award (Top 15 in Israel) | Co-host @ Israel’s #1 Tech Podcast | Author"
+                          - paragraph [ref=f11e559]: 14h
+                          - button "View more options for Shahar Polak’s comment." [ref=f11e560] [cursor=pointer]
+                        - generic [ref=f11e564]:
+                          - paragraph [ref=f11e566]:
+                            - generic [ref=f11e567]: גם דודו אוטמזגין הוציא קולקציה
+                          - generic [ref=f11e569]:
+                            - link "Image shared by Shahar Polak, no description available":
+                              - /url: https://www.linkedin.com/
+                              - img "Image shared by Shahar Polak, no description available"
+                            - button "This image has content credentials." [ref=f11e570] [cursor=pointer]:
+                              - figure [aria-hidden] [ref=f11e572]
+                        - generic [ref=f11e574]:
+                          - generic [ref=f11e575]:
+                            - generic [ref=f11e576]:
+                              - button "31 reactions" [ref=f11e579] [cursor=pointer]:
+                                - paragraph [ref=f11e583]:
+                                  - generic [ref=f11e584]:
+                                    - generic [ref=f11e585]: 31 reactions
+                                    - text: "31"
+                              - button "Open reactions menu"
+                            - button "Reply 4" [ref=f11e586] [cursor=pointer]:
+                              - generic [ref=f11e587]:
+                                - button "Reply" [ref=f11e588]
+                                - paragraph [ref=f11e592]:
+                                  - generic [ref=f11e593]:
+                                    - generic [ref=f11e594]: "4"
+                                    - text: "4"
+                          - link [ref=f11e595] [cursor=pointer]:
+                            - /url: https://www.linkedin.com/
+                    - button [ref=f11e601] [cursor=pointer]:
+                      - paragraph [ref=f11e602]: See 26 more comments
+                - progressbar "In progress" [ref=f11e607]
+          - complementary "Aside" [ref=f11e608]:
+            - generic [ref=f11e609]:
+              - generic [ref=f11e610]:
+                - generic [ref=f11e616]:
+                  - paragraph [ref=f11e617]: Today’s puzzles
+                  - generic [ref=f11e618]:
+                    - link [ref=f11e620] [cursor=pointer]:
+                      - /url: https://www.linkedin.com/games/zip/
+                      - generic "Play Zip" [ref=f11e621]:
+                        - generic [ref=f11e622]:
+                          - figure [aria-hidden] [ref=f11e623]
+                          - generic [ref=f11e624]:
+                            - paragraph [ref=f11e625]:
+                              - strong [ref=f11e626]: Zip
+                              - text: "#605"
+                            - paragraph [ref=f11e627]: 20 connections played
+                    - link [ref=f11e630] [cursor=pointer]:
+                      - /url: https://www.linkedin.com/games/wend/
+                      - generic "Play Wend" [ref=f11e631]:
+                        - generic [ref=f11e632]:
+                          - figure [aria-hidden] [ref=f11e633]
+                          - generic [ref=f11e634]:
+                            - paragraph [ref=f11e635]:
+                              - strong [ref=f11e636]: Wend
+                              - text: "#157"
+                            - paragraph [ref=f11e637]: 14 connections played
+                    - link [ref=f11e640] [cursor=pointer]:
+                      - /url: https://www.linkedin.com/games/patches/
+                      - generic "Play Patches" [ref=f11e641]:
+                        - generic [ref=f11e642]:
+                          - figure [aria-hidden] [ref=f11e643]
+                          - generic [ref=f11e644]:
+                            - paragraph [ref=f11e645]:
+                              - strong [ref=f11e646]: Patches
+                              - text: "#240"
+                            - paragraph [ref=f11e647]: 20 connections played
+                    - link [ref=f11e650] [cursor=pointer]:
+                      - /url: /games/mini-sudoku/
+                      - generic "Play Mini Sudoku" [ref=f11e651]:
+                        - generic [ref=f11e652]:
+                          - figure [aria-hidden] [ref=f11e653]
+                          - generic [ref=f11e654]:
+                            - paragraph [ref=f11e655]:
+                              - strong [ref=f11e656]: Mini Sudoku
+                              - text: "#458"
+                            - paragraph [ref=f11e657]: 15 connections played
+                    - button "Show more" [ref=f11e660] [cursor=pointer]
+                - generic [ref=f11e666]:
+                  - paragraph [ref=f11e667]: Add to your feed
+                  - link [ref=f11e668] [cursor=pointer]:
+                    - /url: https://www.linkedin.com/company/checkpointaisecurity/
+                    - generic [ref=f11e669]:
+                      - figure [ref=f11e670]
+                      - generic [ref=f11e671]:
+                        - paragraph [ref=f11e674]: Check Point AI Security
+                        - paragraph [ref=f11e676]: Company • Software Development
+                        - button "Follow Check Point AI Security" [ref=f11e679]:
+                          - generic [ref=f11e680]: Follow
+                  - link [ref=f11e684] [cursor=pointer]:
+                    - /url: https://www.linkedin.com/in/roey-zalta/
+                    - generic [ref=f11e685]:
+                      - figure [ref=f11e686]
+                      - generic [ref=f11e687]:
+                        - paragraph [ref=f11e690]: Roey Zalta
+                        - paragraph [ref=f11e692]: Data & AI Solutions Engineer @ Microsoft | Designing Data Platforms & Company Brain 🧠
+                        - button "Follow Roey Zalta" [ref=f11e695]:
+                          - generic [ref=f11e696]: Follow
+                  - link [ref=f11e700] [cursor=pointer]:
+                    - /url: https://www.linkedin.com/in/jonathan-zanger/
+                    - generic [ref=f11e701]:
+                      - figure [ref=f11e702]
+                      - generic [ref=f11e703]:
+                        - paragraph [ref=f11e706]: Jonathan Zanger
+                        - paragraph [ref=f11e708]: CTO at Check Point
+                        - button "Follow Jonathan Zanger" [ref=f11e711]:
+                          - generic [ref=f11e712]: Follow
+                  - link "View all recommendations" [ref=f11e716] [cursor=pointer]:
+                    - /url: /mynetwork/discover-hub/
+              - generic [ref=f11e724]:
+                - generic [ref=f11e725]:
+                  - link [ref=f11e726] [cursor=pointer]:
+                    - /url: https://about.linkedin.com/
+                    - paragraph [ref=f11e727]: About
+                  - link [ref=f11e728] [cursor=pointer]:
+                    - /url: https://www.linkedin.com/accessibility/
+                    - paragraph [ref=f11e729]: Accessibility
+                  - link [ref=f11e730] [cursor=pointer]:
+                    - /url: https://www.linkedin.com/help/linkedin/
+                    - paragraph [ref=f11e731]: Help Center
+                  - link [ref=f11e732] [cursor=pointer]:
+                    - /url: https://www.linkedin.com/
+                    - paragraph [ref=f11e733]: Send Feedback
+                  - button [ref=f11e734] [cursor=pointer]:
+                    - paragraph [ref=f11e736]: Privacy & Terms
+                  - link [ref=f11e738] [cursor=pointer]:
+                    - /url: https://www.linkedin.com/help/linkedin/answer/62931/
+                    - paragraph [ref=f11e739]: Ad Choices
+                  - link [ref=f11e740] [cursor=pointer]:
+                    - /url: https://www.linkedin.com/ad/start/?trk=n_nav_ads_rr
+                    - paragraph [ref=f11e741]: Advertising
+                  - button [ref=f11e742] [cursor=pointer]:
+                    - paragraph [ref=f11e744]: Business Services
+                  - link [ref=f11e746] [cursor=pointer]:
+                    - /url: https://www.linkedin.com/mobile/
+                    - paragraph [ref=f11e747]: Get the LinkedIn app
+                  - link [ref=f11e748] [cursor=pointer]:
+                    - /url: https://www.linkedin.com/
+                    - paragraph [ref=f11e749]: More
+                - paragraph [ref=f11e752]: LinkedIn Corporation © 2026
