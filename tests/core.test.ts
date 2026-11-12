@@ -63,6 +63,29 @@ describe('HerdrPane.direction()', () => {
   });
 });
 
+describe('HerdrPane.resizeDirection()', () => {
+  const layout = (rect: { width: number; height: number; x: number; y: number }) => ({
+    result: { layout: { area: { width: 80, height: 54 }, panes: [{ pane_id: 'w1:p2', rect }] } },
+  });
+
+  it('grows a panel on the right toward the left, and shrinks it toward the right', () => {
+    const side = layout({ width: 36, height: 54, x: 44, y: 0 });
+    expect(HerdrPane.resizeDirection(side, 'w1:p2', true)).toBe('left');
+    expect(HerdrPane.resizeDirection(side, 'w1:p2', false)).toBe('right');
+  });
+
+  it('grows a panel below upward, and shrinks it downward', () => {
+    const below = layout({ width: 80, height: 22, x: 0, y: 32 });
+    expect(HerdrPane.resizeDirection(below, 'w1:p2', true)).toBe('up');
+    expect(HerdrPane.resizeDirection(below, 'w1:p2', false)).toBe('down');
+  });
+
+  it('returns null when herdr does not report the pane', () => {
+    expect(HerdrPane.resizeDirection(null, 'w1:p2', true)).toBeNull();
+    expect(HerdrPane.resizeDirection(layout({ width: 36, height: 54, x: 44, y: 0 }), 'w1:p9', true)).toBeNull();
+  });
+});
+
 describe('StateStore', () => {
   it('writes and reads a mod state, with unsafe key characters folded', async () => {
     const store = new StateStore(mkdtempSync(join(tmpdir(), 'herdr-mods-')));

@@ -6,6 +6,8 @@ export class HerdrPane {
   static readonly SIDE_BY_SIDE_MIN_COLUMNS = 140;
   /** herdr opens a split at half; the new pane then gives this share back to the opencode pane. */
   private static readonly SHRINK_AMOUNT = '0.15';
+  /** One in-panel grow or shrink step, as a share of the tab's width or height (`pane resize --amount`). */
+  static readonly RESIZE_STEP = '0.05';
   private static readonly TIMEOUT_MS = 5000;
 
   /** The pane this process runs in, when it runs inside herdr. */
@@ -109,6 +111,32 @@ export class HerdrPane {
   static async move(paneId: string, besidePaneId: string, direction: 'right' | 'down'): Promise<void> {
     await HerdrPane.herdr(['pane', 'move', paneId, '--target-pane', besidePaneId, '--split', direction, '--no-focus']);
     await HerdrPane.herdr(['pane', 'resize', '--pane', paneId, '--direction', direction, '--amount', HerdrPane.SHRINK_AMOUNT]);
+  }
+
+  /**
+   * The `pane resize` direction that grows (or shrinks) `paneId` by one step, or null when the layout is unknown.
+   * herdr moves the border on that side: a panel on the right grows to the `left`, a panel below grows `up`.
+   */
+  static resizeDirection(layout: unknown, paneId: string, grow: boolean): 'left' | 'right' | 'up' | 'down' | null {
+    const area = (layout as { result?: { layout?: { area?: { width?: number } } } } | null)?.result?.layout?.area;
+    const panes = (layout as { result?: { layout?: { panes?: { pane_id?: string; rect?: { width?: number } }[] } } } | null)?.result?.layout?.panes ?? [];
+    const width = panes.find((pane) => pane.pane_id === paneId)?.rect?.width;
+    if (typeof width !== 'number' || typeof area?.width !== 'number') {
+      return null;
+    }
+    const beside: 'right' | 'down' = width < area.width ? 'right' : 'down';
+    if (beside === 'right') {
+      return grow ? 'left' : 'right';
+    }
+    return grow ? 'up' : 'down';
+  }
+
+  /** Grows or shrinks `paneId` by one step (`RESIZE_STEP`) on the side that faces the opencode pane. Never throws. */
+  static async resize(paneId: string, grow: boolean): Promise<void> {
+    const direction = HerdrPane.resizeDirection(await HerdrPane.herdr(['pane', 'layout', '--pane', paneId]), paneId, grow);
+    if (direction) {
+      await HerdrPane.herdr(['pane', 'resize', '--pane', paneId, '--direction', direction, '--amount', HerdrPane.RESIZE_STEP]);
+    }
   }
 
   static paneIdOf(output: unknown): string | null {

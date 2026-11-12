@@ -52,6 +52,9 @@ a narrow one.
 - **Smart placement.** At least 140 columns wide, the panel sits on the right; narrower, below. It moves
   when the screen changes size, for example when you open the session from a phone or back on a PC.
   Claude Code mod panes opened through the `open` CLI do not move yet.
+- **Resizable.** Drag the border between the panel and opencode, or press the `-` and `+` buttons in the
+  panel's top right corner (or the `-` and `+` keys) to shrink or grow it by 5%. A mod that uses `+` or `-`
+  for its own hotkey keeps them. The size you set stays until the panel moves to another side.
 - **Native mods are easy to write.** `bun bin/new.ts <name>` scaffolds one. No config needed.
 - **herdr-owned panes.** A panel opens by itself once. After you close it, it stays closed until you
   run the mod's command.

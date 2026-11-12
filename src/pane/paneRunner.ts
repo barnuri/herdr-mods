@@ -2,6 +2,7 @@ import type { ModPaneUi, ModPaneView } from '../modApi.ts';
 import { StateStore } from '../state/stateStore.ts';
 import { TermRenderer } from '../render/termRenderer.ts';
 import type { ClickRegion, TermFrame } from '../render/termRenderer.ts';
+import { HerdrPane } from '../herdr/herdrPane.ts';
 
 /**
  * Runs one mod's view in a terminal (a herdr pane): renders the last published state, sends mouse
@@ -15,10 +16,15 @@ export class PaneRunner {
   private static readonly LEAVE_SCREEN = '\x1b[?1006l\x1b[?1000l\x1b[?25h\x1b[?7h\x1b[?1049l';
   /** The exit button drawn over the top right corner. */
   private static readonly CLOSE_LABEL = ' x ';
+  /** The grow and shrink buttons, drawn just left of the exit button; the strip is shrink, grow, exit. */
+  private static readonly SHRINK_LABEL = ' - ';
+  private static readonly GROW_LABEL = ' + ';
   private static readonly MOUSE_PRESS = /\x1b\[<0;(\d+);(\d+)M/g;
 
   private readonly store = new StateStore();
   private readonly locals = new Map<string, unknown>();
+  /** This pane's herdr id, when herdr runs it; the grow and shrink buttons need it. */
+  private readonly paneId = process.env['HERDR_PANE_ID'] || undefined;
   private state: unknown = null;
   private frame: TermFrame | null = null;
   private noticeText = '';
@@ -73,8 +79,18 @@ export class PaneRunner {
       return;
     }
     this.lastText = text;
-    const closeColumn = Math.max(1, columns - PaneRunner.CLOSE_LABEL.length + 1);
-    process.stdout.write(`\x1b[H\x1b[2J${text}\x1b[0m\x1b[1;${closeColumn}H\x1b[0;1m${PaneRunner.CLOSE_LABEL}\x1b[0m`);
+    const controlsColumn = this.controlsColumn(columns) + 1;
+    process.stdout.write(`\x1b[H\x1b[2J${text}\x1b[0m\x1b[1;${controlsColumn}H\x1b[0;1m${this.controlsLabel()}\x1b[0m`);
+  }
+
+  /** The top right buttons: shrink, grow (only when herdr can resize this pane), then exit. */
+  private controlsLabel(): string {
+    return this.paneId ? PaneRunner.SHRINK_LABEL + PaneRunner.GROW_LABEL + PaneRunner.CLOSE_LABEL : PaneRunner.CLOSE_LABEL;
+  }
+
+  /** The 0-based column the top right buttons start at. */
+  private controlsColumn(columns: number): number {
+    return Math.max(0, columns - this.controlsLabel().length);
   }
 
   private ui(columns: number, rows: number): ModPaneUi {
@@ -118,7 +134,14 @@ export class PaneRunner {
     if (PaneRunner.QUIT_KEYS.has(key)) {
       process.exit(0);
     }
-    this.frame?.hotkeys.get(key)?.();
+    const hotkey = this.frame?.hotkeys.get(key);
+    if (hotkey) {
+      hotkey();
+    } else if (key === '+') {
+      this.resize(true);
+    } else if (key === '-') {
+      this.resize(false);
+    }
   }
 
   private click(column: number, row: number): void {
@@ -126,8 +149,27 @@ export class PaneRunner {
     if (row === 0 && column >= columns - PaneRunner.CLOSE_LABEL.length) {
       process.exit(0);
     }
+    if (row === 0 && this.paneId) {
+      const start = this.controlsColumn(columns);
+      const shrinkEnd = start + PaneRunner.SHRINK_LABEL.length;
+      if (column >= start && column < shrinkEnd) {
+        this.resize(false);
+        return;
+      }
+      if (column >= shrinkEnd && column < shrinkEnd + PaneRunner.GROW_LABEL.length) {
+        this.resize(true);
+        return;
+      }
+    }
     const hit = this.frame?.regions.find((region: ClickRegion) => region.row === row && column >= region.start && column < region.end);
     hit?.onPress();
+  }
+
+  /** Grows or shrinks this pane in herdr; herdr redraws the pane when its size changes. */
+  private resize(grow: boolean): void {
+    if (this.paneId) {
+      void HerdrPane.resize(this.paneId, grow);
+    }
   }
 
   private open(target: string): void {
