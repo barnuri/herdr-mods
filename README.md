@@ -251,6 +251,22 @@ closed after the person closes it until `--force`.
 - **orch-graph** ([orch-skill](https://github.com/barnuri/orch-skill)): the live DAG of the active
   orch run, with "open in dashboard" and "retry failed nodes".
 
+### orch-graph demo (mock data)
+
+The orch-graph mod lives in the [orch-skill](https://github.com/barnuri/orch-skill) repo, and it is
+the orca skill's graph view.
+
+<p align="center"><img src="demo/orch-graph.gif" alt="The orch-graph mod drawing a mock orch run in a herdr pane" width="900"></p>
+
+<sub>The left side is a made-up orch run (`demo/orch-graph/mock/`). The right pane is the orch-graph
+mod's own `view.ts`, drawn by herdr-mods from that data. No real run is read. Re-record it with
+`ORCH_SKILL_DIR=/path/to/orch-skill vhs demo/orch-graph.tape`, or use the
+[`herdr-mods-demo` skill](skills/herdr-mods-demo/SKILL.md).</sub>
+
+To see the pane without recording, run `ORCH_SKILL_DIR=/path/to/orch-skill sh demo/orch-graph/stage.sh`.
+`ORCH_SKILL_DIR` is the orch-skill checkout that holds `mods/orch-graph`. The demo writes only under a
+temp `$HOME`.
+
 ## Files
 
 | Path | What it is |

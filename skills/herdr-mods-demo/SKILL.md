@@ -39,6 +39,21 @@ the same mod (right). No real data is read or shown.
 4. Clean up: `tmux kill-server; pkill -f demo/driver.ts`.
 5. Keep the GIF under about 500 KB. The README embeds it.
 
+## orch-graph demo (mock data)
+
+A second demo shows the orch-graph mod (from the orch-skill repo) drawing a made-up orch run. It
+needs `ORCH_SKILL_DIR` set to the orch-skill checkout. Never put that path in `demo/` or the README.
+
+1. Run `ORCH_SKILL_DIR=<orch-skill> bun demo/orch-graph/publish.ts` to check the mock converts. It
+   must print a path under a temp `HOME`.
+2. Run `ORCH_SKILL_DIR=<orch-skill> vhs demo/orch-graph.tape`. It writes `demo/orch-graph.gif`.
+3. Look at two frames, as above. The right pane must show `Release notes rollout`, the stage graph
+   with `✓`, `●` and `✗` nodes, and the top right `x`. The pane must be wide enough that the graph
+   is not cut off; `demo/orch-graph/stage.sh` uses 96 columns.
+4. Clean up: `tmux kill-server; pkill -f demo/driver.ts`.
+5. Edit made-up data only in `demo/orch-graph/mock/`. Do not press `o` or `r` in the tape: they start
+   the real dashboard or run a real retry.
+
 ## Change the scenario
 
 Edit `script` in `demo/driver.ts` (the made-up turns, `ses_sub` is a sub-agent) or

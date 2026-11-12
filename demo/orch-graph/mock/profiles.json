@@ -1,0 +1,8 @@
+{
+  "profiles": {
+    "strong": { "harness": "claude", "model": "demo-large" },
+    "local": { "harness": "opencode", "model": "demo-small" },
+    "cheap": { "harness": "claude", "model": "demo-mini" }
+  },
+  "settings": { "max_attempts": 5 }
+}

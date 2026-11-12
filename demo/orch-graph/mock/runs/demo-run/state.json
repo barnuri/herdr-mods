@@ -1,0 +1,22 @@
+{
+  "run_id": "demo-run",
+  "title": "Release notes rollout",
+  "status": "running",
+  "started": "2026-01-15T09:00:00Z",
+  "finished": null,
+  "harness_session": "demo-session",
+  "nodes": [
+    { "id": "plan", "label": "plan the rollout", "adapter": "claude", "status": "done", "profile": "strong", "model": "demo-large", "attempts": [{}], "cost": { "usd": 0.42 } },
+    { "id": "api", "label": "write the API", "adapter": "claude", "status": "done", "profile": "strong", "model": "demo-large", "attempts": [{}], "cost": { "input_tokens": 9200, "output_tokens": 3100 } },
+    { "id": "ui", "label": "build the screen", "adapter": "opencode", "status": "running", "profile": "local", "model": "demo-small", "attempts": [{}], "cost": null },
+    { "id": "tests", "label": "run the tests", "adapter": "opencode", "status": "error", "profile": "local", "model": "demo-small", "attempts": [{}, {}], "cost": null, "error": "2 tests failed" },
+    { "id": "docs", "label": "update the docs", "adapter": "claude", "status": "waiting", "profile": "cheap", "model": "demo-mini", "attempts": [], "cost": null }
+  ],
+  "edges": [
+    ["plan", "api"],
+    ["plan", "ui"],
+    ["api", "tests"],
+    ["ui", "tests"],
+    ["tests", "docs"]
+  ]
+}
