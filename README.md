@@ -5,11 +5,21 @@
   Same mod. Same hooks. Same <code>Pane</code> view. No changes.
 </p>
 
+<p align="center"><img src="demo/orch-graph.gif" alt="The orch-graph mod drawing a mock orch run in a herdr pane" width="900"></p>
+
+<sub>The orch-graph mod, from the [orch-skill](https://github.com/barnuri/orch-skill) repo (the orca skill),
+drawn in a herdr pane. The left side is a made-up orch run (`demo/orch-graph/mock/`). The right pane is
+the mod's own `view.ts`. No real run is read. Re-record it with
+`ORCH_SKILL_DIR=/path/to/orch-skill vhs demo/orch-graph.tape`, or use the
+[`herdr-mods-demo` skill](skills/herdr-mods-demo/SKILL.md).</sub>
+
 <p align="center"><img src="demo/demo.gif" alt="A Claude Code mod running unchanged in a herdr pane" width="900"></p>
 
-<sub>The demo runs the Claude Code mod on the left, unchanged. The pane on the right is that same mod's
+<sub>The summarize mod from [harness-status-line](https://github.com/barnuri/harness-status-line), run
+unchanged. The demo runs the Claude Code mod on the left. The pane on the right is that same mod's
 `Pane` view, drawn by herdr-mods. The turns are made up; no real session data is shown. Re-record it with
 `vhs demo/demo.tape`, or use the [`herdr-mods-demo` skill](skills/herdr-mods-demo/SKILL.md).</sub>
+
 
 ## Why
 
@@ -253,17 +263,7 @@ closed after the person closes it until `--force`.
 
 ### orch-graph demo (mock data)
 
-The orch-graph mod lives in the [orch-skill](https://github.com/barnuri/orch-skill) repo, and it is
-the orca skill's graph view.
-
-<p align="center"><img src="demo/orch-graph.gif" alt="The orch-graph mod drawing a mock orch run in a herdr pane" width="900"></p>
-
-<sub>The left side is a made-up orch run (`demo/orch-graph/mock/`). The right pane is the orch-graph
-mod's own `view.ts`, drawn by herdr-mods from that data. No real run is read. Re-record it with
-`ORCH_SKILL_DIR=/path/to/orch-skill vhs demo/orch-graph.tape`, or use the
-[`herdr-mods-demo` skill](skills/herdr-mods-demo/SKILL.md).</sub>
-
-To see the pane without recording, run `ORCH_SKILL_DIR=/path/to/orch-skill sh demo/orch-graph/stage.sh`.
+The top of this README shows the orch-graph demo. To see the pane without recording, run `ORCH_SKILL_DIR=/path/to/orch-skill sh demo/orch-graph/stage.sh`.
 `ORCH_SKILL_DIR` is the orch-skill checkout that holds `mods/orch-graph`. The demo writes only under a
 temp `$HOME`.
 
