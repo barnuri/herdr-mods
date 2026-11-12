@@ -1,12 +1,24 @@
-import { afterEach, describe, expect, it, spyOn } from 'bun:test';
+import { afterEach, beforeEach, describe, expect, it, spyOn, mock } from 'bun:test';
 import { HerdrPane } from '../src/herdr/herdrPane.ts';
 import { PaneLifecycle } from '../src/herdr/paneLifecycle.ts';
+import type { PanelRecord, PanelTab } from '../src/state/panelState.ts';
+import { PANEL_MOD } from '../src/state/panelState.ts';
 import { StateStore } from '../src/state/stateStore.ts';
 import { mkdtempSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 
-const ENV = { HERDR_MODS_MOD_ID: 'm' };
+const AUTO = { isForced: false, parentPid: 0 };
+const FORCED = { isForced: true, parentPid: 0 };
+const tab = (modId: string, key = 'k'): PanelTab => ({ modId, key, view: `/views/${modId}.ts`, options: {} });
+
+let store: StateStore;
+beforeEach(() => {
+  store = new StateStore(mkdtempSync(join(tmpdir(), 'herdr-mods-')));
+});
+
+/** A lifecycle for the agent pane `besidePaneId`; every lifecycle in a test shares one store, as the host and the CLI do. */
+const lifecycle = (besidePaneId = 'w1:p1') => new PaneLifecycle(besidePaneId, store);
 
 const stubHerdr = (openResults: (string | null)[]) => {
   const live = new Set<string>();
@@ -24,53 +36,115 @@ const stubHerdr = (openResults: (string | null)[]) => {
   return { open, live };
 };
 
+const recordOf = async (besidePaneId = 'w1:p1'): Promise<PanelRecord> =>
+  (await store.read(store.pathFor(PANEL_MOD, besidePaneId))) as PanelRecord;
+
 afterEach(() => {
-  (HerdrPane.open as unknown as { mockRestore(): void }).mockRestore?.();
-  (HerdrPane.modPanesIn as unknown as { mockRestore(): void }).mockRestore?.();
-  (HerdrPane.close as unknown as { mockRestore(): void }).mockRestore?.();
+  mock.restore();
 });
 
 describe('PaneLifecycle', () => {
-  it('opens a pane by itself once, and keeps it while it lives', async () => {
+  it('opens the panel by itself once, and keeps it while it lives', async () => {
     const { open } = stubHerdr(['w1:p2']);
-    const lifecycle = new PaneLifecycle('w1:p1');
 
-    expect(await lifecycle.open('m:k', ENV, false)).toBe(true);
-    expect(await lifecycle.open('m:k', ENV, false)).toBe(true);
+    expect(await lifecycle().open(tab('a'), AUTO)).toBe(true);
+    expect(await lifecycle().open(tab('a'), AUTO)).toBe(true);
 
     expect(open).toHaveBeenCalledTimes(1);
   });
 
-  it('never adds a second panel to a tab that already has one, even from another instance', async () => {
+  it('adds a second mod to the same panel as a tab, without a second herdr pane', async () => {
     const { open } = stubHerdr(['w1:p2', 'w1:p3']);
-    await new PaneLifecycle('w1:p1').open('m:k', ENV, false);
 
-    expect(await new PaneLifecycle('w1:p1').open('other:k', ENV, false)).toBe(false);
-    expect(await new PaneLifecycle('w1:p1').open('m:k', ENV, true)).toBe(true);
+    expect(await lifecycle().open(tab('a'), AUTO)).toBe(true);
+    expect(await lifecycle().open(tab('b'), AUTO)).toBe(true);
 
-    expect(open).toHaveBeenCalledTimes(2);
+    expect(open).toHaveBeenCalledTimes(1);
+    expect((await recordOf()).tabs.map((item) => item.modId)).toEqual(['a', 'b']);
   });
 
-  it('stays closed after the person closes it, until a forced open', async () => {
+  it('keeps one tab per mod: opening it with another key replaces its key', async () => {
+    const { open } = stubHerdr(['w1:p2']);
+    await lifecycle().open(tab('a', 'k1'), AUTO);
+
+    expect(await lifecycle().open(tab('a', 'k2'), AUTO)).toBe(true);
+
+    const { tabs } = await recordOf();
+    expect(tabs).toHaveLength(1);
+    expect(tabs[0]?.key).toBe('k2');
+    expect(open).toHaveBeenCalledTimes(1);
+  });
+
+  it('a forced open selects its tab', async () => {
+    stubHerdr(['w1:p2']);
+    await lifecycle().open(tab('a'), AUTO);
+    await lifecycle().open(tab('b'), AUTO);
+    const before = (await recordOf()).focus?.at ?? 0;
+
+    await lifecycle().open(tab('a'), FORCED);
+
+    const record = await recordOf();
+    expect(record.focus?.modId).toBe('a');
+    expect(record.focus?.at).toBeGreaterThan(before);
+  });
+
+  it('stays closed after the person closes the panel, until a forced open', async () => {
     const { open, live } = stubHerdr(['w1:p2', 'w1:p3']);
-    const lifecycle = new PaneLifecycle('w1:p1');
-    await lifecycle.open('m:k', ENV, false);
+    await lifecycle().open(tab('a'), AUTO);
     live.delete('w1:p2');
 
-    expect(await lifecycle.open('m:k', ENV, false)).toBe(false);
-    expect(await lifecycle.open('m:k', ENV, true)).toBe(true);
+    expect(await lifecycle().open(tab('a'), AUTO)).toBe(false);
+    expect(await lifecycle().open(tab('a'), FORCED)).toBe(true);
 
     expect(open).toHaveBeenCalledTimes(2);
   });
 
-  it('retries the auto-open after a failed first open', async () => {
-    const { open } = stubHerdr([null, 'w1:p2']);
-    const lifecycle = new PaneLifecycle('w1:p1');
+  it('opens by itself again in a new opencode process, after the person closed it before', async () => {
+    const { open, live } = stubHerdr(['w1:p2', 'w1:p3']);
+    await lifecycle().open(tab('a'), AUTO);
+    live.delete('w1:p2');
 
-    expect(await lifecycle.open('m:k', ENV, false)).toBe(false);
-    expect(await lifecycle.open('m:k', ENV, false)).toBe(true);
+    expect(await lifecycle().open(tab('a'), { isForced: false, parentPid: 77 })).toBe(true);
 
     expect(open).toHaveBeenCalledTimes(2);
+  });
+
+  it('a forced open does not use up the automatic open of this process', async () => {
+    const { open, live } = stubHerdr(['w1:p2', 'w1:p3']);
+    await lifecycle().open(tab('a'), FORCED);
+    live.delete('w1:p2');
+
+    expect(await lifecycle().open(tab('a'), AUTO)).toBe(true);
+
+    expect(open).toHaveBeenCalledTimes(2);
+  });
+
+  it('a new panel starts with only the tab that opened it', async () => {
+    const { live } = stubHerdr(['w1:p2', 'w1:p3']);
+    await lifecycle().open(tab('a'), AUTO);
+    live.delete('w1:p2');
+
+    await lifecycle().open(tab('b'), FORCED);
+
+    expect((await recordOf()).tabs.map((item) => item.modId)).toEqual(['b']);
+  });
+
+  it('retries the automatic open after a failed first open', async () => {
+    const { open } = stubHerdr([null, 'w1:p2']);
+
+    expect(await lifecycle().open(tab('a'), AUTO)).toBe(false);
+    expect(await lifecycle().open(tab('a'), AUTO)).toBe(true);
+
+    expect(open).toHaveBeenCalledTimes(2);
+  });
+
+  it('isOpen is true for a tab only while its panel lives', async () => {
+    const { live } = stubHerdr(['w1:p2']);
+    await lifecycle().open(tab('a'), AUTO);
+
+    expect(await lifecycle().isOpen('a:k')).toBe(true);
+    live.delete('w1:p2');
+    expect(await lifecycle().isOpen('a:k')).toBe(false);
   });
 });
 
@@ -84,56 +158,51 @@ describe('PaneLifecycle relayout', () => {
     return { layout, move };
   };
 
-  afterEach(() => {
-    (HerdrPane.layoutOf as unknown as { mockRestore(): void }).mockRestore?.();
-    (HerdrPane.move as unknown as { mockRestore(): void }).mockRestore?.();
-  });
-
   it('moves a side-by-side panel below when the screen narrows', async () => {
     stubHerdr(['w1:p2']);
-    const lifecycle = new PaneLifecycle('w1:p1');
-    await lifecycle.open('m:k', ENV, false);
+    const life = lifecycle();
+    await life.open(tab('m'), AUTO);
     const { move } = stubLayout(100, { 'w1:p1': 60, 'w1:p2': 40 });
 
-    await lifecycle.relayout();
+    await life.relayout();
     expect(move).not.toHaveBeenCalled();
-    await lifecycle.relayout();
+    await life.relayout();
 
     expect(move).toHaveBeenCalledWith('w1:p2', 'w1:p1', 'down');
   });
 
   it('moves a stacked panel to the right when the screen widens', async () => {
     stubHerdr(['w1:p2']);
-    const lifecycle = new PaneLifecycle('w1:p1');
-    await lifecycle.open('m:k', ENV, false);
+    const life = lifecycle();
+    await life.open(tab('m'), AUTO);
     const { move } = stubLayout(200, { 'w1:p1': 200, 'w1:p2': 200 });
 
-    await lifecycle.relayout();
-    await lifecycle.relayout();
+    await life.relayout();
+    await life.relayout();
 
     expect(move).toHaveBeenCalledWith('w1:p2', 'w1:p1', 'right');
   });
 
   it('does not move when the width flips back before the second check', async () => {
     stubHerdr(['w1:p2']);
-    const lifecycle = new PaneLifecycle('w1:p1');
-    await lifecycle.open('m:k', ENV, false);
+    await lifecycle().open(tab('m'), AUTO);
+    const life = lifecycle();
     const { layout, move } = stubLayout(100, { 'w1:p1': 60, 'w1:p2': 40 });
 
-    await lifecycle.relayout();
+    await life.relayout();
     layout.mockImplementation(async () => ({ areaWidth: 200, widths: new Map([['w1:p1', 120], ['w1:p2', 80]]) }));
-    await lifecycle.relayout();
+    await life.relayout();
 
     expect(move).not.toHaveBeenCalled();
   });
 
   it('closes an extra mod panel in the tab and keeps the first', async () => {
     const { live } = stubHerdr(['w1:p2']);
-    await new PaneLifecycle('w1:p1').open('m:k', ENV, false);
+    await lifecycle().open(tab('m'), AUTO);
     live.add('w1:p3');
     stubLayout(200, { 'w1:p1': 120, 'w1:p2': 80, 'w1:p3': 80 });
 
-    await new PaneLifecycle('w1:p1').relayout();
+    await lifecycle().relayout();
 
     expect(HerdrPane.close).toHaveBeenCalledWith('w1:p3');
     expect(HerdrPane.close).not.toHaveBeenCalledWith('w1:p2');
@@ -141,59 +210,33 @@ describe('PaneLifecycle relayout', () => {
 
   it('leaves a panel alone when its side already fits the width', async () => {
     stubHerdr(['w1:p2']);
-    const lifecycle = new PaneLifecycle('w1:p1');
-    await lifecycle.open('m:k', ENV, false);
+    await lifecycle().open(tab('m'), AUTO);
     const { move } = stubLayout(200, { 'w1:p1': 120, 'w1:p2': 80 });
 
-    await lifecycle.relayout();
+    await lifecycle().relayout();
 
     expect(move).not.toHaveBeenCalled();
   });
 });
 
-describe('PaneLifecycle snapshot', () => {
-  it('keeps the dismissal across instances, as the open CLI needs', async () => {
-    const { open, live } = stubHerdr(['w1:p2']);
-    const first = new PaneLifecycle('w1:p1');
-    await first.open('m:k', ENV, false);
-    live.delete('w1:p2');
-
-    const second = new PaneLifecycle('w1:p1', first.snapshot());
-
-    expect(await second.open('m:k', ENV, false)).toBe(false);
-    expect(open).toHaveBeenCalledTimes(1);
-  });
-});
-
 describe('StateStore.write()', () => {
   it('lets concurrent writes of one key all succeed', async () => {
-    const store = new StateStore(mkdtempSync(join(tmpdir(), 'herdr-mods-')));
+    const local = new StateStore(mkdtempSync(join(tmpdir(), 'herdr-mods-')));
 
-    await Promise.all([1, 2, 3, 4].map((turns) => store.write('m', 'k', { turns })));
+    await Promise.all([1, 2, 3, 4].map((turns) => local.write('m', 'k', { turns })));
 
-    expect(await store.read(store.pathFor('m', 'k'))).toHaveProperty('turns');
-  });
-});
-
-describe('PaneLifecycle single pane', () => {
-  it('skips an automatic open while another mod pane lives, and replaces it on a forced open', async () => {
-    const { open, live } = stubHerdr(['w1:p2', 'w1:p3']);
-    const close = spyOn(HerdrPane, 'close').mockImplementation(async (paneId: string) => void live.delete(paneId));
-    const lifecycle = new PaneLifecycle('w1:p1');
-    await lifecycle.open('a:k', ENV, false);
-
-    expect(await lifecycle.open('b:k', ENV, false)).toBe(false);
-    expect(await lifecycle.open('b:k', ENV, true)).toBe(true);
-
-    expect(close).toHaveBeenCalledWith('w1:p2');
-    expect(open).toHaveBeenCalledTimes(2);
-    close.mockRestore();
+    expect(await local.read(local.pathFor('m', 'k'))).toHaveProperty('turns');
   });
 });
 
 describe('HerdrPane.title', () => {
-  it('names the pane after the mod', () => {
-    expect(HerdrPane.title('claude-summaries')).toBe('summaries Mod');
-    expect(HerdrPane.title('weather')).toBe('weather Mod');
+  it('names the panel after the mod, with a lowercase mod', () => {
+    expect(HerdrPane.title('claude-summaries')).toBe('summaries mod');
+    expect(HerdrPane.title('weather')).toBe('weather mod');
+  });
+
+  it('gives the mod name without the claude prefix', () => {
+    expect(HerdrPane.name('claude-summaries')).toBe('summaries');
+    expect(HerdrPane.name('orch-graph')).toBe('orch-graph');
   });
 });

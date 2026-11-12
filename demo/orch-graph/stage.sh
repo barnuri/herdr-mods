@@ -14,5 +14,5 @@ tmux set -t demo pane-border-status top
 tmux set -t demo pane-border-format ' #{pane_title} '
 tmux select-pane -t demo -T 'orch run (mock data)'
 tmux split-window -h -t demo -l 96 "HERDR_MODS_MOD_ID=orch-graph HERDR_MODS_VIEW='$ORCH_SKILL_DIR/mods/orch-graph/opencode/view.ts' HERDR_MODS_KEY=run bun '$ROOT/bin/pane.ts'"
-tmux select-pane -t demo.1 -T 'orch-graph Mod'
+tmux select-pane -t demo.1 -T 'orch-graph mod'
 [ -n "$DEMO_DETACH" ] || tmux attach -t demo

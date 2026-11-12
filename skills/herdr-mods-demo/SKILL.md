@@ -34,7 +34,7 @@ the same mod (right). No real data is read or shown.
    - The right pane must show `Session summary` and `✓` lines. A lone `…` means the pane did not
      get a frame: run `DEMO_DETACH=1 sh demo/stage.sh`, wait 9 seconds, then
      `tmux capture-pane -p -t demo.1`.
-   - The pane title must read `summaries Mod`, and the top right must show `x`.
+   - The pane title must read `summaries mod`, and the top right must show `x`.
    - No text outside the made-up demo text.
 4. Clean up: `tmux kill-server; pkill -f demo/driver.ts`.
 5. Keep the GIF under about 500 KB. The README embeds it.

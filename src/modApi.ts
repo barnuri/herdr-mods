@@ -64,6 +64,11 @@ export interface ModPaneUi {
   redraw(): void;
   /** Sends a JSON message to the mod inside opencode (`api.onMessage`). Repeated identical messages are sent once. */
   send(message: unknown): void;
+  /**
+   * Hands the pane's terminal to `argv` (for example a terminal browser) until it exits, then draws the
+   * pane again. Resolves to the exit code, or -1 when it could not start.
+   */
+  takeover(argv: readonly string[]): Promise<number>;
   /** Closes the pane. */
   close(): void;
 }

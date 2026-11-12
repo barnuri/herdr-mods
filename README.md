@@ -43,12 +43,14 @@ a narrow one.
 
 - **Runs Claude Code mods unchanged.** Drop the mod folder in `~/.config/herdr-mods/mods`. See
   [Claude Code mods](#claude-code-mods).
-- **One panel per agent pane.** A second mod never stacks a panel. An automatic open does nothing
-  while a panel lives, and a command you run yourself replaces it.
+- **Tabs for many mods.** One panel per agent pane holds a tab per active mod, named after the mod,
+  as in Claude Code. Click a tab, or press Tab, to switch. A mod is active at most once: running its
+  command again (for example for another session) replaces its tab. An automatic open adds a tab
+  without switching to it; a command you run yourself switches to its tab.
 - **Sub-agents roll up into the main session.** Sub-agent turns feed the main session's mod state.
   They never start a session or a panel of their own.
 - **Close it with `x`.** A button in the top right corner, like Claude Code. `Ctrl+C` works too.
-- **Named after the mod.** The pane title reads `<mod name> Mod`.
+- **Named after the mod.** Each tab shows its mod's name. The pane title reads `<mod name> mod` for the selected tab.
 - **Smart placement.** At least 140 columns wide, the panel sits on the right; narrower, below. It moves
   when the screen changes size, for example when you open the session from a phone or back on a PC.
   Claude Code mod panes opened through the `open` CLI do not move yet.
@@ -56,8 +58,8 @@ a narrow one.
   panel's top right corner (or the `-` and `+` keys) to shrink or grow it by 5%. A mod that uses `+` or `-`
   for its own hotkey keeps them. The size you set stays until the panel moves to another side.
 - **Native mods are easy to write.** `bun bin/new.ts <name>` scaffolds one. No config needed.
-- **herdr-owned panes.** A panel opens by itself once. After you close it, it stays closed until you
-  run the mod's command.
+- **herdr-owned panes.** A panel opens by itself once. After you close it (the `x` closes every tab),
+  it stays closed until you run a mod's command.
 
 ## Install
 
@@ -193,10 +195,11 @@ A view can also be classic JSX: `.tsx` files in the pane process compile with an
 | `ui` member | What it does |
 |---|---|
 | `elements` | `Box`, `Text`, `Button`, `Link` |
-| `columns`, `rows` | The pane size |
+| `columns`, `rows` | The size of the view: the pane, less the tab row |
 | `local(name, initial)` | Pane-local state: the value and a setter that redraws |
 | `send(message)` | Sends JSON to the mod inside opencode |
 | `open(target)`, `notice(message)`, `redraw()`, `close()` | Open a URL or file, show a notice line, redraw, close |
+| `takeover(argv)` | Runs `argv` in the pane's own terminal until it exits (for example `terminal-browser open <page>`), then redraws. Resolves to the exit code, or -1 |
 
 ### Elements
 
@@ -255,8 +258,8 @@ sh <herdr-mods>/bin/bun.sh <herdr-mods>/bin/open.ts \
 # prints {"open": true}
 ```
 
-It keeps the same lifecycle between runs, per agent pane: a pane opens once by itself, and stays
-closed after the person closes it until `--force`.
+The mod becomes a tab of the agent pane's mod panel. Each agent pane keeps one panel, and each mod one tab:
+the panel opens once by itself, and stays closed after the person closes it until `--force`.
 
 ## Mods
 
@@ -284,7 +287,7 @@ temp `$HOME`.
 | `src/claude/` | Claude Code mod support: the loader, the `claude-code` shim, the runtime, and the frame bridge |
 | `src/herdr/` | herdr plugin pane calls, placement, and the pane lifecycle |
 | `src/state/` | State files, pane messages, and the error log (`~/.cache/herdr-mods/errors.jsonl`) |
-| `src/pane/paneRunner.ts`, `bin/pane.ts` | The pane process: loads a view, draws it, routes clicks and keys |
+| `src/pane/paneRunner.ts`, `bin/pane.ts` | The pane process: draws the tab row and the selected tab's view, routes clicks and keys |
 | `src/render/termRenderer.ts` | Draws a view tree as terminal lines with click regions |
 | `bin/new.ts`, `bin/open.ts`, `bin/bun.sh` | Scaffold a mod, open a pane from any harness, find Bun |
 

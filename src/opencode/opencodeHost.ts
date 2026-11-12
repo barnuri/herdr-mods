@@ -148,14 +148,8 @@ export class OpencodeHost {
       }
       return false;
     }
-    const env = {
-      HERDR_MODS_MOD_ID: mod.id,
-      HERDR_MODS_VIEW: mod.pane.module,
-      HERDR_MODS_KEY: key,
-      HERDR_MODS_OPTIONS: JSON.stringify(options),
-      HERDR_MODS_PARENT_PID: String(process.pid),
-    };
-    const isOpen = await this.lifecycle.open(`${mod.id}:${key}`, env, isForced);
+    const tab = { modId: mod.id, key, view: mod.pane.module, options };
+    const isOpen = await this.lifecycle.open(tab, { isForced, parentPid: process.pid });
     if (!isOpen && isForced) {
       this.toast(`${mod.id}: ${OpencodeHost.NOT_OPENED}`);
     }

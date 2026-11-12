@@ -17,11 +17,11 @@ export class HerdrPane {
 
   /**
    * Opens this plugin's pane entrypoint beside `besidePaneId` (right when wide, below when narrow)
-   * without moving focus, with `env` for the pane process. Returns the new pane id, or null when herdr
-   * could not open it (for example, the plugin is not installed). No `--cwd`: herdr resolves the
-   * manifest's relative pane command against the pane's cwd, so it must stay the plugin root.
+   * without moving focus, with `env` for the pane process and `title` as its label. Returns the new pane
+   * id, or null when herdr could not open it (for example, the plugin is not installed). No `--cwd`: herdr
+   * resolves the manifest's relative pane command against the pane's cwd, so it must stay the plugin root.
    */
-  static async open(besidePaneId: string, env: Readonly<Record<string, string>>): Promise<string | null> {
+  static async open(besidePaneId: string, env: Readonly<Record<string, string>>, title: string): Promise<string | null> {
     const direction = HerdrPane.direction(await HerdrPane.herdr(['pane', 'layout', '--pane', besidePaneId]), besidePaneId);
     const envFlags = Object.entries(env).flatMap(([name, value]) => ['--env', `${name}=${value}`]);
     const opened = await HerdrPane.herdr([
@@ -36,18 +36,24 @@ export class HerdrPane {
     ]);
     const paneId = HerdrPane.paneIdOf(opened);
     if (paneId) {
-      const modId = env['HERDR_MODS_MOD_ID'];
-      if (modId) {
-        await HerdrPane.herdr(['pane', 'rename', paneId, HerdrPane.title(modId)]);
-      }
+      await HerdrPane.rename(paneId, title);
       await HerdrPane.herdr(['pane', 'resize', '--pane', paneId, '--direction', direction, '--amount', HerdrPane.SHRINK_AMOUNT]);
     }
     return paneId;
   }
 
-  /** The pane label: `<mod name> Mod`. */
+  /** The mod's name as its tab and title show it: the id without the `claude-` prefix. */
+  static name(modId: string): string {
+    return modId.replace(/^claude-/, '');
+  }
+
+  /** The pane label: `<mod name> mod`. */
   static title(modId: string): string {
-    return `${modId.replace(/^claude-/, '')} Mod`;
+    return `${HerdrPane.name(modId)} mod`;
+  }
+
+  static async rename(paneId: string, title: string): Promise<void> {
+    await HerdrPane.herdr(['pane', 'rename', paneId, title]);
   }
 
   static async exists(paneId: string): Promise<boolean> {
@@ -66,7 +72,7 @@ export class HerdrPane {
   }
 
   /**
-   * Every mod panel (labelled `<name> Mod`) in the same tab as `besidePaneId`, as herdr reports them. Null when
+   * Every mod panel (labelled `<name> mod`) in the same tab as `besidePaneId`, as herdr reports them. Null when
    * herdr cannot list the panes: the caller must then not open one, since it cannot tell whether one exists.
    */
   static async modPanesIn(besidePaneId: string): Promise<string[] | null> {
@@ -78,8 +84,9 @@ export class HerdrPane {
     }
     const panes = list.result.panes;
     const tab = panes.find((pane) => pane.pane_id === besidePaneId)?.tab_id;
+    // The case-insensitive match also finds panels that an older version labelled `<name> Mod`.
     return panes
-      .filter((pane) => tab !== undefined && pane.tab_id === tab && typeof pane.label === 'string' && pane.label.endsWith(' Mod'))
+      .filter((pane) => tab !== undefined && pane.tab_id === tab && typeof pane.label === 'string' && /\smod$/i.test(pane.label))
       .map((pane) => pane.pane_id)
       .filter((id): id is string => typeof id === 'string');
   }

@@ -12,6 +12,6 @@ command = ["sh", "bin/bun.sh", "install"]
 # HERDR_MODS_* env vars on `herdr plugin pane open`.
 [[panes]]
 id = "mod"
-title = "Mod"
+title = "mod"
 placement = "split"
 command = ["sh", "bin/bun.sh", "bin/pane.ts"]

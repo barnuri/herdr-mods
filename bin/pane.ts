@@ -1,7 +1,8 @@
 import { TermRenderer } from '../src/render/termRenderer.ts';
 import { PaneRunner } from '../src/pane/paneRunner.ts';
+import { PANEL_MOD } from '../src/state/panelState.ts';
+import type { PanelRecord } from '../src/state/panelState.ts';
 import { StateStore } from '../src/state/stateStore.ts';
-import type { ModPaneView } from '../src/modApi.ts';
 
 // Mod views may be classic JSX (`h`, `Fragment`), as Claude Code mods are; every .tsx outside
 // node_modules is compiled with that factory, and `h` builds the tree TermRenderer draws.
@@ -32,24 +33,37 @@ const argument = (name: string): string | undefined => {
   return process.env[`HERDR_MODS_${name.slice(2).toUpperCase().replaceAll('-', '_')}`];
 };
 
-const modId = argument('--mod-id');
-const viewPath = argument('--view');
-const key = argument('--key');
-if (!modId || !viewPath || !key) {
-  console.error('usage: bun bin/pane.ts --mod-id <id> --view <view module> --key <state key> [--options <json>] [--parent-pid <pid>]');
-  process.exit(1);
-}
+// `--panel <agent pane id>` runs the mod panel the opencode host and the `open` CLI keep as a record: a tab per
+// mod. Without it, `--mod-id`, `--view` and `--key` run one mod alone (the demo scripts do this).
 const store = new StateStore();
+let logId = PANEL_MOD;
 const fail = async (error: unknown): Promise<never> => {
-  await store.logError(modId, `pane failed: ${error instanceof Error ? (error.stack ?? error.message) : String(error)}`);
+  await store.logError(logId, `pane failed: ${error instanceof Error ? (error.stack ?? error.message) : String(error)}`);
   process.exit(1);
 };
 process.on('uncaughtException', (error) => void fail(error));
 process.on('unhandledRejection', (error) => void fail(error));
 try {
-  const view = (await import(viewPath)).default as ModPaneView;
-  const options = JSON.parse(argument('--options') ?? '{}') as Record<string, unknown>;
-  await new PaneRunner(modId, view, key, options, Number(argument('--parent-pid') ?? 0)).run();
+  const panel = argument('--panel');
+  const modId = argument('--mod-id');
+  const viewPath = argument('--view');
+  const key = argument('--key');
+  let loadRecord: () => Promise<PanelRecord | null>;
+  if (panel) {
+    loadRecord = async () => (await store.read(store.pathFor(PANEL_MOD, panel))) as PanelRecord | null;
+  } else if (modId && viewPath && key) {
+    logId = modId;
+    const options = JSON.parse(argument('--options') ?? '{}') as Record<string, unknown>;
+    const record: PanelRecord = { tabs: [{ modId, key, view: viewPath, options }], focus: null, autoOpened: [] };
+    loadRecord = async () => record;
+  } else {
+    console.error(
+      'usage: bun bin/pane.ts --panel <agent pane id> [--parent-pid <pid>]\n' +
+        '       bun bin/pane.ts --mod-id <id> --view <view module> --key <state key> [--options <json>] [--parent-pid <pid>]',
+    );
+    process.exit(1);
+  }
+  await new PaneRunner(loadRecord, Number(argument('--parent-pid') ?? 0)).run();
 } catch (error) {
   await fail(error);
 }
