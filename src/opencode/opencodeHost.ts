@@ -12,6 +12,8 @@ type LoadedMod = { readonly mod: HerdrMod; readonly options: Readonly<Record<str
 /** The herdr-mods plugin inside opencode: loads the configured mods and runs their panes in herdr. */
 export class OpencodeHost {
   private static readonly NOT_OPENED = `the herdr pane did not open; install the plugin: herdr plugin install barnuri/herdr-mods`;
+  /** How often the panel checks whether the screen width now calls for another side. */
+  private static readonly RELAYOUT_MS = 2000;
 
   private readonly store = new StateStore();
   private readonly lifecycle: PaneLifecycle | null;
@@ -20,6 +22,11 @@ export class OpencodeHost {
   constructor(private readonly context: HostContext) {
     const besidePaneId = HerdrPane.currentPaneId();
     this.lifecycle = besidePaneId ? new PaneLifecycle(besidePaneId) : null;
+    if (this.lifecycle) {
+      const lifecycle = this.lifecycle;
+      const timer = setInterval(() => void lifecycle.relayout(), OpencodeHost.RELAYOUT_MS);
+      this.cleanups.push(() => clearInterval(timer));
+    }
   }
 
   /** Loads the configured mods, every herdr mod in the mods folder, and every Claude Code mod there. */

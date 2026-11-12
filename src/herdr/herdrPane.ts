@@ -63,6 +63,54 @@ export class HerdrPane {
     return typeof width === 'number' && width < HerdrPane.SIDE_BY_SIDE_MIN_COLUMNS ? 'down' : 'right';
   }
 
+  /**
+   * Every mod panel (labelled `<name> Mod`) in the same tab as `besidePaneId`, as herdr reports them. Null when
+   * herdr cannot list the panes: the caller must then not open one, since it cannot tell whether one exists.
+   */
+  static async modPanesIn(besidePaneId: string): Promise<string[] | null> {
+    const list = (await HerdrPane.herdr(['pane', 'list'])) as
+      | { result?: { panes?: { pane_id?: unknown; tab_id?: unknown; label?: unknown }[] } }
+      | null;
+    if (!list?.result?.panes) {
+      return null;
+    }
+    const panes = list.result.panes;
+    const tab = panes.find((pane) => pane.pane_id === besidePaneId)?.tab_id;
+    return panes
+      .filter((pane) => tab !== undefined && pane.tab_id === tab && typeof pane.label === 'string' && pane.label.endsWith(' Mod'))
+      .map((pane) => pane.pane_id)
+      .filter((id): id is string => typeof id === 'string');
+  }
+
+  /** The side a panel should take for a tab this wide: `right` at SIDE_BY_SIDE_MIN_COLUMNS or more, else `down`. */
+  static directionForWidth(areaWidth: number): 'right' | 'down' {
+    return areaWidth < HerdrPane.SIDE_BY_SIDE_MIN_COLUMNS ? 'down' : 'right';
+  }
+
+  /** The tab's full width and each pane's width in it, or null when herdr cannot report the layout. */
+  static async layoutOf(paneId: string): Promise<{ areaWidth: number; widths: Map<string, number> } | null> {
+    const layout = (await HerdrPane.herdr(['pane', 'layout', '--pane', paneId])) as
+      | { result?: { layout?: { area?: { width?: unknown }; panes?: { pane_id?: unknown; rect?: { width?: unknown } }[] } } }
+      | null;
+    const areaWidth = layout?.result?.layout?.area?.width;
+    if (typeof areaWidth !== 'number') {
+      return null;
+    }
+    const widths = new Map<string, number>();
+    for (const pane of layout?.result?.layout?.panes ?? []) {
+      if (typeof pane.pane_id === 'string' && typeof pane.rect?.width === 'number') {
+        widths.set(pane.pane_id, pane.rect.width);
+      }
+    }
+    return { areaWidth, widths };
+  }
+
+  /** Moves a pane beside `besidePaneId` on `direction`, then gives the opencode pane its share back, as `open` does. */
+  static async move(paneId: string, besidePaneId: string, direction: 'right' | 'down'): Promise<void> {
+    await HerdrPane.herdr(['pane', 'move', paneId, '--target-pane', besidePaneId, '--split', direction, '--no-focus']);
+    await HerdrPane.herdr(['pane', 'resize', '--pane', paneId, '--direction', direction, '--amount', HerdrPane.SHRINK_AMOUNT]);
+  }
+
   static paneIdOf(output: unknown): string | null {
     if (!output || typeof output !== 'object' || !('result' in output)) {
       return null;

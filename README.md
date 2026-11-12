@@ -49,7 +49,9 @@ a narrow one.
   They never start a session or a panel of their own.
 - **Close it with `x`.** A button in the top right corner, like Claude Code. `Ctrl+C` works too.
 - **Named after the mod.** The pane title reads `<mod name> Mod`.
-- **Smart placement.** At least 140 columns wide, the panel opens on the right; narrower, below.
+- **Smart placement.** At least 140 columns wide, the panel sits on the right; narrower, below. It moves
+  when the screen changes size, for example when you open the session from a phone or back on a PC.
+  Claude Code mod panes opened through the `open` CLI do not move yet.
 - **Native mods are easy to write.** `bun bin/new.ts <name>` scaffolds one. No config needed.
 - **herdr-owned panes.** A panel opens by itself once. After you close it, it stays closed until you
   run the mod's command.

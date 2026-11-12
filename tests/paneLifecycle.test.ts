@@ -17,13 +17,17 @@ const stubHerdr = (openResults: (string | null)[]) => {
     }
     return paneId;
   });
-  spyOn(HerdrPane, 'exists').mockImplementation(async (paneId: string) => live.has(paneId));
+  spyOn(HerdrPane, 'modPanesIn').mockImplementation(async () => [...live]);
+  spyOn(HerdrPane, 'close').mockImplementation(async (paneId: string) => {
+    live.delete(paneId);
+  });
   return { open, live };
 };
 
 afterEach(() => {
   (HerdrPane.open as unknown as { mockRestore(): void }).mockRestore?.();
-  (HerdrPane.exists as unknown as { mockRestore(): void }).mockRestore?.();
+  (HerdrPane.modPanesIn as unknown as { mockRestore(): void }).mockRestore?.();
+  (HerdrPane.close as unknown as { mockRestore(): void }).mockRestore?.();
 });
 
 describe('PaneLifecycle', () => {
@@ -35,6 +39,16 @@ describe('PaneLifecycle', () => {
     expect(await lifecycle.open('m:k', ENV, false)).toBe(true);
 
     expect(open).toHaveBeenCalledTimes(1);
+  });
+
+  it('never adds a second panel to a tab that already has one, even from another instance', async () => {
+    const { open } = stubHerdr(['w1:p2', 'w1:p3']);
+    await new PaneLifecycle('w1:p1').open('m:k', ENV, false);
+
+    expect(await new PaneLifecycle('w1:p1').open('other:k', ENV, false)).toBe(false);
+    expect(await new PaneLifecycle('w1:p1').open('m:k', ENV, true)).toBe(true);
+
+    expect(open).toHaveBeenCalledTimes(2);
   });
 
   it('stays closed after the person closes it, until a forced open', async () => {
@@ -57,6 +71,83 @@ describe('PaneLifecycle', () => {
     expect(await lifecycle.open('m:k', ENV, false)).toBe(true);
 
     expect(open).toHaveBeenCalledTimes(2);
+  });
+});
+
+describe('PaneLifecycle relayout', () => {
+  const stubLayout = (areaWidth: number, paneWidths: Record<string, number>) => {
+    const layout = spyOn(HerdrPane, 'layoutOf').mockImplementation(async () => ({
+      areaWidth,
+      widths: new Map(Object.entries(paneWidths)),
+    }));
+    const move = spyOn(HerdrPane, 'move').mockImplementation(async () => undefined);
+    return { layout, move };
+  };
+
+  afterEach(() => {
+    (HerdrPane.layoutOf as unknown as { mockRestore(): void }).mockRestore?.();
+    (HerdrPane.move as unknown as { mockRestore(): void }).mockRestore?.();
+  });
+
+  it('moves a side-by-side panel below when the screen narrows', async () => {
+    stubHerdr(['w1:p2']);
+    const lifecycle = new PaneLifecycle('w1:p1');
+    await lifecycle.open('m:k', ENV, false);
+    const { move } = stubLayout(100, { 'w1:p1': 60, 'w1:p2': 40 });
+
+    await lifecycle.relayout();
+    expect(move).not.toHaveBeenCalled();
+    await lifecycle.relayout();
+
+    expect(move).toHaveBeenCalledWith('w1:p2', 'w1:p1', 'down');
+  });
+
+  it('moves a stacked panel to the right when the screen widens', async () => {
+    stubHerdr(['w1:p2']);
+    const lifecycle = new PaneLifecycle('w1:p1');
+    await lifecycle.open('m:k', ENV, false);
+    const { move } = stubLayout(200, { 'w1:p1': 200, 'w1:p2': 200 });
+
+    await lifecycle.relayout();
+    await lifecycle.relayout();
+
+    expect(move).toHaveBeenCalledWith('w1:p2', 'w1:p1', 'right');
+  });
+
+  it('does not move when the width flips back before the second check', async () => {
+    stubHerdr(['w1:p2']);
+    const lifecycle = new PaneLifecycle('w1:p1');
+    await lifecycle.open('m:k', ENV, false);
+    const { layout, move } = stubLayout(100, { 'w1:p1': 60, 'w1:p2': 40 });
+
+    await lifecycle.relayout();
+    layout.mockImplementation(async () => ({ areaWidth: 200, widths: new Map([['w1:p1', 120], ['w1:p2', 80]]) }));
+    await lifecycle.relayout();
+
+    expect(move).not.toHaveBeenCalled();
+  });
+
+  it('closes an extra mod panel in the tab and keeps the first', async () => {
+    const { live } = stubHerdr(['w1:p2']);
+    await new PaneLifecycle('w1:p1').open('m:k', ENV, false);
+    live.add('w1:p3');
+    stubLayout(200, { 'w1:p1': 120, 'w1:p2': 80, 'w1:p3': 80 });
+
+    await new PaneLifecycle('w1:p1').relayout();
+
+    expect(HerdrPane.close).toHaveBeenCalledWith('w1:p3');
+    expect(HerdrPane.close).not.toHaveBeenCalledWith('w1:p2');
+  });
+
+  it('leaves a panel alone when its side already fits the width', async () => {
+    stubHerdr(['w1:p2']);
+    const lifecycle = new PaneLifecycle('w1:p1');
+    await lifecycle.open('m:k', ENV, false);
+    const { move } = stubLayout(200, { 'w1:p1': 120, 'w1:p2': 80 });
+
+    await lifecycle.relayout();
+
+    expect(move).not.toHaveBeenCalled();
   });
 });
 
