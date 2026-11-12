@@ -34,9 +34,18 @@ export class HerdrPane {
     ]);
     const paneId = HerdrPane.paneIdOf(opened);
     if (paneId) {
+      const modId = env['HERDR_MODS_MOD_ID'];
+      if (modId) {
+        await HerdrPane.herdr(['pane', 'rename', paneId, HerdrPane.title(modId)]);
+      }
       await HerdrPane.herdr(['pane', 'resize', '--pane', paneId, '--direction', direction, '--amount', HerdrPane.SHRINK_AMOUNT]);
     }
     return paneId;
+  }
+
+  /** The pane label: `<mod name> Mod`. */
+  static title(modId: string): string {
+    return `${modId.replace(/^claude-/, '')} Mod`;
   }
 
   static async exists(paneId: string): Promise<boolean> {

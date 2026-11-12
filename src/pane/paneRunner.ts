@@ -13,6 +13,8 @@ export class PaneRunner {
   private static readonly QUIT_KEYS = new Set(['\u0003']);
   private static readonly ENTER_SCREEN = '\x1b[?1049h\x1b[?7l\x1b[?25l\x1b[?1000h\x1b[?1006h';
   private static readonly LEAVE_SCREEN = '\x1b[?1006l\x1b[?1000l\x1b[?25h\x1b[?7h\x1b[?1049l';
+  /** The exit button drawn over the top right corner. */
+  private static readonly CLOSE_LABEL = ' x ';
   private static readonly MOUSE_PRESS = /\x1b\[<0;(\d+);(\d+)M/g;
 
   private readonly store = new StateStore();
@@ -71,7 +73,8 @@ export class PaneRunner {
       return;
     }
     this.lastText = text;
-    process.stdout.write(`\x1b[H\x1b[2J${text}`);
+    const closeColumn = Math.max(1, columns - PaneRunner.CLOSE_LABEL.length + 1);
+    process.stdout.write(`\x1b[H\x1b[2J${text}\x1b[0m\x1b[1;${closeColumn}H\x1b[0;1m${PaneRunner.CLOSE_LABEL}\x1b[0m`);
   }
 
   private ui(columns: number, rows: number): ModPaneUi {
@@ -119,6 +122,10 @@ export class PaneRunner {
   }
 
   private click(column: number, row: number): void {
+    const columns = process.stdout.columns ?? 80;
+    if (row === 0 && column >= columns - PaneRunner.CLOSE_LABEL.length) {
+      process.exit(0);
+    }
     const hit = this.frame?.regions.find((region: ClickRegion) => region.row === row && column >= region.start && column < region.end);
     hit?.onPress();
   }

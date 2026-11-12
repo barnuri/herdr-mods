@@ -28,6 +28,14 @@ export class PaneLifecycle {
 
   async open(paneKey: string, env: Readonly<Record<string, string>>, isForced: boolean): Promise<boolean> {
     const known = this.paneIds.get(paneKey);
+    const others = await this.livingOthers(paneKey);
+    if (others.length > 0) {
+      // One mod pane per agent pane: an automatic open never adds a second one, a forced open replaces it.
+      if (!isForced) {
+        return false;
+      }
+      await Promise.all(others.map(([key, paneId]) => this.closeOne(key, paneId)));
+    }
     if (!isForced && this.autoOpened.has(paneKey)) {
       return known !== undefined && (await HerdrPane.exists(known));
     }
@@ -41,6 +49,17 @@ export class PaneLifecycle {
     this.paneIds.set(paneKey, paneId);
     this.autoOpened.add(paneKey);
     return true;
+  }
+
+  private async livingOthers(paneKey: string): Promise<[string, string][]> {
+    const others = [...this.paneIds].filter(([key]) => key !== paneKey);
+    const alive = await Promise.all(others.map(([, paneId]) => HerdrPane.exists(paneId)));
+    return others.filter((_, index) => alive[index]);
+  }
+
+  private async closeOne(paneKey: string, paneId: string): Promise<void> {
+    await HerdrPane.close(paneId);
+    this.paneIds.delete(paneKey);
   }
 
   async isOpen(paneKey: string): Promise<boolean> {

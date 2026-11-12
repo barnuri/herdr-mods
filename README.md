@@ -1,19 +1,48 @@
-# herdr-mods
+<h1 align="center">herdr-mods</h1>
 
-Mods for [opencode](https://opencode.ai) and Claude Code, in [herdr](https://herdr.dev) panes. A mod
-puts a live pane beside your coding agent, with buttons, links and hotkeys, like a Claude Code mod
-pane. Because it runs in its own terminal process, it can draw anything a terminal can.
+<p align="center">
+  <b>Claude Code mods, running natively in <a href="https://herdr.dev">herdr</a> panes beside <a href="https://opencode.ai">opencode</a>.</b><br>
+  Same mod. Same hooks. Same <code>Pane</code> view. No changes.
+</p>
 
-- **Runs Claude Code mods unchanged.** Drop an existing Claude Code mod folder into the mods folder
-  and it runs inside opencode. Its `on(...)` hooks, `$` engine, atoms, commands and `Pane` view all
-  work, and the pane opens in herdr. See [Claude Code mods](#claude-code-mods).
-- **Native mods are easy to write.** `bun bin/new.ts <name>` scaffolds one, and any folder in
-  `~/.config/herdr-mods/mods` is loaded. No config needed.
-- **Smart placement.** When the agent pane is at least 140 columns wide, the mod pane opens on the
-  right. When it is narrower (a phone or a small split), the mod pane opens below. The agent keeps
-  about two thirds of the space.
-- **herdr-owned panes.** Panes open through `herdr plugin pane open`. A pane opens by itself once.
-  After you close it, it stays closed until you run the mod's command.
+<p align="center"><img src="demo/demo.gif" alt="A Claude Code mod running unchanged in a herdr pane" width="900"></p>
+
+<sub>The demo runs the Claude Code mod on the left, unchanged. The pane on the right is that same mod's
+`Pane` view, drawn by herdr-mods. The turns are made up; no real session data is shown. Re-record it with
+`vhs demo/demo.tape`, or use the [`herdr-mods-demo` skill](skills/herdr-mods-demo/SKILL.md).</sub>
+
+## Why
+
+A Claude Code mod is a small TypeScript plugin: `on('turn.complete', ...)` hooks, `atom` state, and a
+`Pane` view with buttons. herdr-mods **is the same API on opencode**, so a mod you wrote for Claude
+Code works here with no port:
+
+| | Claude Code | herdr-mods |
+|---|---|---|
+| Hooks (`session.start`, `turn.start`, `tool.call`, `turn.complete`, `command.run`) | yes | **yes, same names and payloads** |
+| `$` engine (`$.fs`, `$.process`, `$.clock`, `$.ui`, `$.command`) | yes | **yes** |
+| `atom`, `read`, `update` from `claude-code` | yes | **yes** |
+| `Pane` view (`Box`, `Text`, `Button`, `Link`, hotkeys) | docked pane | **a real herdr pane** |
+| Your mod's source | `hooks/register.tsx` | **the same file** |
+
+You also get what a docked pane can't do: it runs in its own terminal process, so it can draw
+anything a terminal can, keep running while you work, and sit on the right of a wide screen or below
+a narrow one.
+
+## Features
+
+- **Runs Claude Code mods unchanged.** Drop the mod folder in `~/.config/herdr-mods/mods`. See
+  [Claude Code mods](#claude-code-mods).
+- **One panel per agent pane.** A second mod never stacks a panel. An automatic open does nothing
+  while a panel lives, and a command you run yourself replaces it.
+- **Sub-agents roll up into the main session.** Sub-agent turns feed the main session's mod state.
+  They never start a session or a panel of their own.
+- **Close it with `x`.** A button in the top right corner, like Claude Code. `Ctrl+C` works too.
+- **Named after the mod.** The pane title reads `<mod name> Mod`.
+- **Smart placement.** At least 140 columns wide, the panel opens on the right; narrower, below.
+- **Native mods are easy to write.** `bun bin/new.ts <name>` scaffolds one. No config needed.
+- **herdr-owned panes.** A panel opens by itself once. After you close it, it stays closed until you
+  run the mod's command.
 
 ## Install
 

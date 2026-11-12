@@ -83,3 +83,26 @@ describe('StateStore.write()', () => {
     expect(await store.read(store.pathFor('m', 'k'))).toHaveProperty('turns');
   });
 });
+
+describe('PaneLifecycle single pane', () => {
+  it('skips an automatic open while another mod pane lives, and replaces it on a forced open', async () => {
+    const { open, live } = stubHerdr(['w1:p2', 'w1:p3']);
+    const close = spyOn(HerdrPane, 'close').mockImplementation(async (paneId: string) => void live.delete(paneId));
+    const lifecycle = new PaneLifecycle('w1:p1');
+    await lifecycle.open('a:k', ENV, false);
+
+    expect(await lifecycle.open('b:k', ENV, false)).toBe(false);
+    expect(await lifecycle.open('b:k', ENV, true)).toBe(true);
+
+    expect(close).toHaveBeenCalledWith('w1:p2');
+    expect(open).toHaveBeenCalledTimes(2);
+    close.mockRestore();
+  });
+});
+
+describe('HerdrPane.title', () => {
+  it('names the pane after the mod', () => {
+    expect(HerdrPane.title('claude-summaries')).toBe('summaries Mod');
+    expect(HerdrPane.title('weather')).toBe('weather Mod');
+  });
+});

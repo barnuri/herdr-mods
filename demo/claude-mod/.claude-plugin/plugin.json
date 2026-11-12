@@ -1,0 +1,1 @@
+{ "name": "summaries", "version": "0.1.0", "userConfig": { "title": { "type": "string", "default": "Session summary" } } }

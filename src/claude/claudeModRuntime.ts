@@ -16,7 +16,7 @@ type PaneView = { title: string; columns: number; rows: number; actions: Readonl
 type SessionEvent = { readonly data: { readonly sessionID: string } };
 type OpencodeData = {
   readonly on: (type: string, handler: (event: SessionEvent) => void) => () => void;
-  readonly session: { readonly message: { list(sessionID: string): readonly unknown[]; sync(sessionID: string): Promise<void> } };
+  readonly session: { readonly get?: (sessionID: string) => { readonly parentID?: string } | undefined; readonly message: { list(sessionID: string): readonly unknown[]; sync(sessionID: string): Promise<void> } };
 };
 
 /**
@@ -113,7 +113,25 @@ export class ClaudeModRuntime implements AtomStore {
     }));
   }
 
+  /** The top-level session that owns `sessionId`: a sub-agent session resolves to its main session. */
+  private static rootOf(data: OpencodeData, sessionId: string): string {
+    const seen = new Set<string>();
+    let id = sessionId;
+    while (!seen.has(id)) {
+      seen.add(id);
+      const parent = data.session.get?.(id)?.parentID;
+      if (!parent) {
+        break;
+      }
+      id = parent;
+    }
+    return id;
+  }
+
   private async onTurnStart(data: OpencodeData, sessionId: string): Promise<void> {
+    if (ClaudeModRuntime.rootOf(data, sessionId) !== sessionId) {
+      return; // a sub-agent turn is part of the main session's turn
+    }
     this.currentSessionId = sessionId;
     await data.session.message.sync(sessionId).catch(() => undefined);
     const prompt = OpencodeTurnReader.latestPrompt(data.session.message.list(sessionId));
@@ -127,7 +145,9 @@ export class ClaudeModRuntime implements AtomStore {
   }
 
   private async onTurnEnd(data: OpencodeData, sessionId: string): Promise<void> {
-    this.currentSessionId = sessionId;
+    const rootId = ClaudeModRuntime.rootOf(data, sessionId);
+    const isSubAgent = rootId !== sessionId;
+    this.currentSessionId = rootId;
     await data.session.message.sync(sessionId).catch(() => undefined);
     const turn = OpencodeTurnReader.latestTurn(data.session.message.list(sessionId));
     if (!turn) {
@@ -135,7 +155,10 @@ export class ClaudeModRuntime implements AtomStore {
     }
     for (const call of turn.calls) {
       const result = { text: call.resultText, isError: call.isError, result: {} };
-      await this.dispatch('tool.call', { tool: call.tool, ...call.input }, async () => result);
+      await this.dispatch('tool.call', { tool: call.tool, ...call.input, ...(isSubAgent ? { agentSessionId: sessionId } : {}) }, async () => result);
+    }
+    if (isSubAgent) {
+      return; // its tool calls reach the mod under the main session; only the main session completes a turn
     }
     await this.dispatch('turn.complete', {
       turnId: turn.turnId,
