@@ -24,6 +24,37 @@ export class StateStore {
     await rename(temp, path);
   }
 
+  /** The messages a pane sends back, one JSON line each, beside its state file. */
+  inputPathFor(modId: string, key: string): string {
+    return `${this.pathFor(modId, key)}.input.jsonl`;
+  }
+
+  async send(path: string, message: unknown): Promise<void> {
+    await mkdir(dirname(path), { recursive: true });
+    await appendFile(path, `${JSON.stringify(message)}\n`);
+  }
+
+  /** The messages after byte `offset`, and the offset to read from next time. */
+  async readMessages(path: string, offset: number): Promise<{ readonly messages: unknown[]; readonly offset: number }> {
+    const text = await readFile(path, 'utf8').catch(() => '');
+    if (text.length <= offset) {
+      return { messages: [], offset: Math.min(offset, text.length) };
+    }
+    const fresh = text.slice(offset);
+    const complete = fresh.slice(0, fresh.lastIndexOf('\n') + 1);
+    const messages = complete
+      .split('\n')
+      .filter((line) => line !== '')
+      .flatMap((line) => {
+        try {
+          return [JSON.parse(line) as unknown];
+        } catch {
+          return [];
+        }
+      });
+    return { messages, offset: offset + complete.length };
+  }
+
   async read(path: string): Promise<unknown> {
     try {
       return JSON.parse(await readFile(path, 'utf8'));

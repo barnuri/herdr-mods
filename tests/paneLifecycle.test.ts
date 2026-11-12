@@ -60,6 +60,20 @@ describe('PaneLifecycle', () => {
   });
 });
 
+describe('PaneLifecycle snapshot', () => {
+  it('keeps the dismissal across instances, as the open CLI needs', async () => {
+    const { open, live } = stubHerdr(['w1:p2']);
+    const first = new PaneLifecycle('w1:p1');
+    await first.open('m:k', ENV, false);
+    live.delete('w1:p2');
+
+    const second = new PaneLifecycle('w1:p1', first.snapshot());
+
+    expect(await second.open('m:k', ENV, false)).toBe(false);
+    expect(open).toHaveBeenCalledTimes(1);
+  });
+});
+
 describe('StateStore.write()', () => {
   it('lets concurrent writes of one key all succeed', async () => {
     const store = new StateStore(mkdtempSync(join(tmpdir(), 'herdr-mods-')));

@@ -41,6 +41,10 @@ export interface ModHostApi {
   toast(message: string): void;
   /** Appends an error to `~/.cache/herdr-mods/errors.jsonl`; never shown in the TUI. */
   logError(message: string): Promise<void>;
+  /** Whether the pane for `key` is open now (false after the person closes it). */
+  isPaneOpen(key: string): Promise<boolean>;
+  /** Calls `handler` with each message the pane for `key` sends (`ui.send`); returns the unsubscribe. */
+  onMessage(key: string, handler: (message: unknown) => void): () => void;
 }
 
 /** What a mod's view gets inside its herdr pane. */
@@ -58,6 +62,8 @@ export interface ModPaneUi {
   /** Shows a one-line notice at the bottom of the pane. */
   notice(message: string): void;
   redraw(): void;
+  /** Sends a JSON message to the mod inside opencode (`api.onMessage`). Repeated identical messages are sent once. */
+  send(message: unknown): void;
   /** Closes the pane. */
   close(): void;
 }
@@ -65,8 +71,10 @@ export interface ModPaneUi {
 export interface HerdrMod<State = unknown> {
   readonly id: string;
   readonly command?: ModCommand;
-  /** Runs once when opencode starts; returns a cleanup. */
-  readonly setup?: (api: ModHostApi) => (() => void) | void;
+  /** More commands, read after `setup` resolves (for mods that register commands at start). */
+  readonly commands?: () => readonly ModCommand[];
+  /** Runs once when opencode starts; returns a cleanup. The host waits for it before it registers commands. */
+  readonly setup?: (api: ModHostApi) => (() => void) | void | Promise<(() => void) | void>;
   readonly pane: {
     /** Absolute path of the view module. */
     readonly module: string;

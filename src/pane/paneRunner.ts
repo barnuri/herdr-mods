@@ -21,6 +21,7 @@ export class PaneRunner {
   private frame: TermFrame | null = null;
   private noticeText = '';
   private lastText = '';
+  private lastSent = '';
 
   constructor(
     private readonly modId: string,
@@ -94,6 +95,14 @@ export class PaneRunner {
         this.draw(true);
       },
       redraw: () => this.draw(true),
+      send: (message) => {
+        const line = JSON.stringify(message);
+        if (line === this.lastSent) {
+          return;
+        }
+        this.lastSent = line;
+        void this.store.send(this.store.inputPathFor(this.modId, this.key), message);
+      },
       close: () => process.exit(0),
     };
   }

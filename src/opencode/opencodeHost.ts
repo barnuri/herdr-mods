@@ -1,6 +1,9 @@
-import type { HerdrMod, ModHostApi } from '../modApi.ts';
+import type { HerdrMod, ModCommand, ModHostApi } from '../modApi.ts';
 import { HerdrPane } from '../herdr/herdrPane.ts';
 import { PaneLifecycle } from '../herdr/paneLifecycle.ts';
+import { ClaudeModRuntime } from '../claude/claudeModRuntime.ts';
+import { ModFolder } from '../mods/modFolder.ts';
+import { MessageWatcher } from '../state/messageWatcher.ts';
 import { StateStore } from '../state/stateStore.ts';
 import type { HostContext, ModEntry } from './hostContext.ts';
 
@@ -19,12 +22,18 @@ export class OpencodeHost {
     this.lifecycle = besidePaneId ? new PaneLifecycle(besidePaneId) : null;
   }
 
+  /** Loads the configured mods, every herdr mod in the mods folder, and every Claude Code mod there. */
   async register(entries: readonly ModEntry[]): Promise<() => void> {
-    const loaded = await Promise.all(entries.map((entry) => this.load(entry)));
-    const mods = loaded.filter((item): item is LoadedMod => item !== null);
+    const found = await new ModFolder().list();
+    const folderMods = found.filter((mod) => mod.kind === 'herdr').map((mod) => mod.path);
+    const configured = new Set(entries.map((entry) => (typeof entry === 'string' ? entry : entry.path)));
+    const all = [...entries, ...folderMods.filter((path) => !configured.has(path))];
+    const herdrMods = await Promise.all(all.map((entry) => this.load(entry)));
+    const claudeMods = await Promise.all(found.filter((mod) => mod.kind === 'claude').map((mod) => this.loadClaudeMod(mod.path)));
+    const mods = [...herdrMods, ...claudeMods].filter((item): item is LoadedMod => item !== null);
     for (const { mod, options } of mods) {
       try {
-        const cleanup = mod.setup?.(this.api(mod, options));
+        const cleanup = await mod.setup?.(this.api(mod, options));
         if (cleanup) {
           this.cleanups.push(cleanup);
         }
@@ -42,11 +51,27 @@ export class OpencodeHost {
     };
   }
 
+  private async loadClaudeMod(root: string): Promise<LoadedMod | null> {
+    try {
+      const mod = await ClaudeModRuntime.definition(root);
+      return { mod, options: this.optionsFor(mod.id) };
+    } catch (error) {
+      await this.store.logError(root, `Claude mod load failed: ${OpencodeHost.describe(error)}`);
+      return null;
+    }
+  }
+
+  /** Per-mod options from the host config: `modOptions: { "<mod id>": { ... } }`. */
+  private optionsFor(modId: string): Readonly<Record<string, unknown>> {
+    const all = (this.context.options?.['modOptions'] ?? {}) as Readonly<Record<string, Readonly<Record<string, unknown>>>>;
+    return all[modId] ?? {};
+  }
+
   private async load(entry: ModEntry): Promise<LoadedMod | null> {
     const path = typeof entry === 'string' ? entry : entry.path;
-    const options = typeof entry === 'string' ? {} : (entry.options ?? {});
     try {
       const mod = (await import(path)).default as HerdrMod;
+      const options = typeof entry === 'string' ? this.optionsFor(mod.id) : (entry.options ?? this.optionsFor(mod.id));
       return { mod, options };
     } catch (error) {
       await this.store.logError(path, `load failed: ${OpencodeHost.describe(error)}`);
@@ -56,30 +81,24 @@ export class OpencodeHost {
 
   // A keymap layer lives as long as the reactive owner that created it, so it is created inside a slot render.
   private registerCommands(mods: readonly LoadedMod[]): null {
-    const commands = mods.flatMap(({ mod, options }) => {
-      const command = mod.command;
-      if (!command) {
-        return [];
-      }
-      return [
-        {
-          id: `herdr-mods.${mod.id}`,
-          title: command.name,
-          group: 'Session',
-          description: command.description,
-          palette: true as const,
-          slash: { name: command.name, arguments: true as const },
-          run: (input?: string) => void this.runCommand(mod, options, input ?? ''),
-        },
-      ];
-    });
+    const commands = mods.flatMap(({ mod, options }) =>
+      [...(mod.command ? [mod.command] : []), ...(mod.commands?.() ?? [])].map((command) => ({
+        id: `herdr-mods.${mod.id}.${command.name}`,
+        title: command.name,
+        group: 'Session',
+        description: command.description,
+        palette: true as const,
+        slash: { name: command.name, arguments: true as const },
+        run: (input?: string) => void this.runCommand(command, mod, options, input ?? ''),
+      })),
+    );
     this.context.keymap.layer(() => ({ mode: 'global', commands }));
     return null;
   }
 
-  private async runCommand(mod: HerdrMod, options: Readonly<Record<string, unknown>>, input: string): Promise<void> {
+  private async runCommand(command: ModCommand, mod: HerdrMod, options: Readonly<Record<string, unknown>>, input: string): Promise<void> {
     try {
-      const message = await mod.command?.run(input.trim(), this.api(mod, options));
+      const message = await command.run(input.trim(), this.api(mod, options));
       if (message) {
         this.toast(message);
       }
@@ -106,6 +125,12 @@ export class OpencodeHost {
         }),
       toast: (message) => this.toast(message),
       logError: (message) => this.store.logError(mod.id, message),
+      isPaneOpen: (key) => this.lifecycle?.isOpen(`${mod.id}:${key}`) ?? Promise.resolve(false),
+      onMessage: (key, handler) => {
+        const stop = MessageWatcher.watch(this.store, this.store.inputPathFor(mod.id, key), handler);
+        this.cleanups.push(stop);
+        return stop;
+      },
     };
   }
 

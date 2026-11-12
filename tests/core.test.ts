@@ -74,3 +74,22 @@ describe('StateStore', () => {
     expect(await store.read(store.pathFor('summarize', 'missing'))).toBeNull();
   });
 });
+
+describe('ModFolder', () => {
+  it('finds herdr mods and Claude mods, skipping other folders', async () => {
+    const { mkdirSync, writeFileSync } = await import('node:fs');
+    const { ModFolder } = await import('../src/mods/modFolder.ts');
+    const root = mkdtempSync(join(tmpdir(), 'herdr-mods-dir-'));
+    mkdirSync(join(root, 'hello'));
+    writeFileSync(join(root, 'hello', 'mod.ts'), '');
+    mkdirSync(join(root, 'recap', '.claude-plugin'), { recursive: true });
+    writeFileSync(join(root, 'recap', '.claude-plugin', 'plugin.json'), '{}');
+    mkdirSync(join(root, 'notes'));
+
+    expect(await new ModFolder(root).list()).toEqual([
+      { kind: 'herdr', path: join(root, 'hello', 'mod.ts') },
+      { kind: 'claude', path: join(root, 'recap') },
+    ]);
+    expect(await new ModFolder(join(root, 'missing')).list()).toEqual([]);
+  });
+});
