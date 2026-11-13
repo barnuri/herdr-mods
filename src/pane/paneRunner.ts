@@ -49,6 +49,8 @@ export class PaneRunner {
   /** The `focus.at` already applied, so a forced open selects its tab once. */
   private focusSeen = 0;
   private tabRegions: TabRegion[] = [];
+  /** The rows the tab row takes above the view: 1 when there are tabs to switch between, else 0. */
+  private barRows = 0;
   private frame: TermFrame | null = null;
   private noticeText = '';
   private lastText = '';
@@ -123,25 +125,27 @@ export class PaneRunner {
     }
     const columns = process.stdout.columns ?? 80;
     const rows = process.stdout.rows ?? 24;
-    const bar = this.tabBar(columns);
+    // One tab needs no tab row: the view then gets the whole pane.
+    const bar = this.record && this.record.tabs.length > 1 ? this.tabBar(columns) : { text: '', regions: [] };
     this.tabRegions = bar.regions;
+    this.barRows = bar.regions.length > 0 ? 1 : 0;
     const selected = this.record?.tabs.find((tab) => tab.modId === this.selectedId);
     const view = selected ? this.views.get(selected.view) : undefined;
     let body: string[] = [];
     if (selected && view) {
       let tree: unknown;
       try {
-        tree = view(this.states.get(tabId(selected)) ?? null, this.ui(selected, columns, rows - 1));
+        tree = view(this.states.get(tabId(selected)) ?? null, this.ui(selected, columns, rows - this.barRows));
       } catch (error) {
         void this.store.logError(selected.modId, `render failed: ${error instanceof Error ? error.message : String(error)}`);
         return;
       }
       this.frame = new TermRenderer(columns, (target) => this.open(target)).render(tree);
-      body = this.frame.lines.slice(0, rows - 1);
+      body = this.frame.lines.slice(0, rows - this.barRows);
     } else {
       this.frame = null;
     }
-    const all = [bar.text, ...body];
+    const all = this.barRows > 0 ? [bar.text, ...body] : body;
     const lines = this.noticeText ? [...all.slice(0, rows - 1), `\x1b[2m${this.noticeText}\x1b[0m`] : all.slice(0, rows);
     const text = lines.join('\n');
     if (!isForced && text === this.lastText) {
@@ -288,14 +292,14 @@ export class PaneRunner {
         return;
       }
     }
-    if (row === 0) {
+    if (row < this.barRows) {
       const tab = this.tabRegions.find((region) => column >= region.start && column < region.end);
       if (tab) {
         this.select(tab.modId);
       }
       return;
     }
-    const hit = this.frame?.regions.find((region: ClickRegion) => region.row === row - 1 && column >= region.start && column < region.end);
+    const hit = this.frame?.regions.find((region: ClickRegion) => region.row === row - this.barRows && column >= region.start && column < region.end);
     hit?.onPress();
   }
 

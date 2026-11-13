@@ -46,7 +46,7 @@ a narrow one.
 - **Tabs for many mods.** One panel per agent pane holds a tab per active mod, named after the mod,
   as in Claude Code. Click a tab, or press Tab, to switch. A mod is active at most once: running its
   command again (for example for another session) replaces its tab. An automatic open adds a tab
-  without switching to it; a command you run yourself switches to its tab.
+  without switching to it; a command you run yourself switches to its tab. With one mod, no tab row shows.
 - **Sub-agents roll up into the main session.** Sub-agent turns feed the main session's mod state.
   They never start a session or a panel of their own.
 - **Close it with `x`.** A button in the top right corner, like Claude Code. `Ctrl+C` works too.
