@@ -2,7 +2,7 @@ import { afterEach, beforeEach, describe, expect, it, spyOn, mock } from 'bun:te
 import { HerdrPane } from '../src/herdr/herdrPane.ts';
 import { PaneLifecycle } from '../src/herdr/paneLifecycle.ts';
 import type { PanelRecord, PanelTab } from '../src/state/panelState.ts';
-import { PANEL_MOD } from '../src/state/panelState.ts';
+import { PANEL_MOD, panelSideKey } from '../src/state/panelState.ts';
 import { StateStore } from '../src/state/stateStore.ts';
 import { mkdtempSync } from 'node:fs';
 import { tmpdir } from 'node:os';
@@ -216,6 +216,41 @@ describe('PaneLifecycle relayout', () => {
     await lifecycle().relayout();
 
     expect(move).not.toHaveBeenCalled();
+  });
+
+  it('keeps a panel below the agent pane on a narrow tab when a sidebar makes it narrower than the tab', async () => {
+    stubHerdr(['w1:p2']);
+    await lifecycle().open(tab('m'), AUTO);
+    const raw = {
+      result: {
+        layout: {
+          panes: [
+            { pane_id: 'w1:p9', rect: { x: 0, y: 0, width: 40, height: 50 } },
+            { pane_id: 'w1:p1', rect: { x: 40, y: 0, width: 80, height: 30 } },
+            { pane_id: 'w1:p2', rect: { x: 40, y: 30, width: 80, height: 20 } },
+          ],
+        },
+      },
+    };
+    spyOn(HerdrPane, 'layoutOf').mockImplementation(async () => ({ areaWidth: 120, widths: new Map([['w1:p1', 80], ['w1:p2', 80]]), raw }));
+    const move = spyOn(HerdrPane, 'move').mockImplementation(async () => undefined);
+    const life = lifecycle();
+
+    await life.relayout();
+    await life.relayout();
+
+    expect(move).not.toHaveBeenCalled();
+  });
+
+  it('moves the panel at once to the side the person chose, even on a wide tab', async () => {
+    stubHerdr(['w1:p2']);
+    await lifecycle().open(tab('m'), AUTO);
+    await store.write(PANEL_MOD, panelSideKey('w1:p1'), { side: 'down' });
+    const { move } = stubLayout(200, { 'w1:p1': 120, 'w1:p2': 80 });
+
+    await lifecycle().relayout();
+
+    expect(move).toHaveBeenCalledWith('w1:p2', 'w1:p1', 'down');
   });
 });
 

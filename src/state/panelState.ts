@@ -19,3 +19,6 @@ export interface PanelRecord {
 
 /** The state folder for panel records: one file per agent pane. */
 export const PANEL_MOD = '_panels';
+
+/** The key of the side (`{ side: 'right' | 'down' }`) the person chose for the panel beside `agentPaneId`. */
+export const panelSideKey = (agentPaneId: string): string => `${agentPaneId}.side`;

@@ -1,5 +1,6 @@
 import type { ModPaneUi, ModPaneView } from '../modApi.ts';
 import type { PanelRecord, PanelTab } from '../state/panelState.ts';
+import { PANEL_MOD, panelSideKey } from '../state/panelState.ts';
 import { StateStore } from '../state/stateStore.ts';
 import { TermRenderer } from '../render/termRenderer.ts';
 import type { ClickRegion, TermFrame } from '../render/termRenderer.ts';
@@ -28,14 +29,19 @@ export class PaneRunner {
   private static readonly LEAVE_SCREEN = '\x1b[?1006l\x1b[?1000l\x1b[?25h\x1b[?7h\x1b[?1049l';
   /** The exit button drawn over the top right corner. */
   private static readonly CLOSE_LABEL = ' x ';
-  /** The grow and shrink buttons, drawn just left of the exit button; the strip is shrink, grow, exit. */
+  /** The grow and shrink buttons, drawn just left of the exit button; the strip is move, shrink, grow, exit. */
   private static readonly SHRINK_LABEL = ' - ';
   private static readonly GROW_LABEL = ' + ';
+  /** Moves the panel between the right of the agent pane and below it, so its width or its height can change. */
+  private static readonly MOVE_LABEL = ' \u21c5 ';
+  private static readonly MOVE_KEY = 'm';
   private static readonly MOUSE_PRESS = /\x1b\[<0;(\d+);(\d+)M/g;
 
   private readonly store = new StateStore();
   /** This pane's herdr id, when herdr runs it; the tab titles and the grow and shrink buttons need it. */
   private readonly paneId = process.env['HERDR_PANE_ID'] || undefined;
+  /** The agent pane this panel sits beside; resizing and moving are measured against it. */
+  private readonly besidePaneId = process.env['HERDR_MODS_PANEL'] || undefined;
   /** Each mod's pane-local values, kept while its tab is not selected. */
   private readonly locals = new Map<string, Map<string, unknown>>();
   /** The views loaded so far, by path; null when a view failed to load. */
@@ -174,9 +180,16 @@ export class PaneRunner {
     return { text, regions };
   }
 
-  /** The top right buttons: shrink, grow (only when herdr can resize this pane), then exit. */
+  /** The top right buttons: move (beside an agent pane), shrink, grow (only when herdr can resize this pane), then exit. */
   private controlsLabel(): string {
-    return this.paneId ? PaneRunner.SHRINK_LABEL + PaneRunner.GROW_LABEL + PaneRunner.CLOSE_LABEL : PaneRunner.CLOSE_LABEL;
+    if (!this.paneId) {
+      return PaneRunner.CLOSE_LABEL;
+    }
+    return this.moveLabel() + PaneRunner.SHRINK_LABEL + PaneRunner.GROW_LABEL + PaneRunner.CLOSE_LABEL;
+  }
+
+  private moveLabel(): string {
+    return this.besidePaneId ? PaneRunner.MOVE_LABEL : '';
   }
 
   /** The 0-based column the top right buttons start at. */
@@ -272,6 +285,8 @@ export class PaneRunner {
       this.resize(true);
     } else if (key === '-') {
       this.resize(false);
+    } else if (key === PaneRunner.MOVE_KEY) {
+      this.move();
     }
   }
 
@@ -282,8 +297,13 @@ export class PaneRunner {
     }
     if (row === 0 && this.paneId) {
       const start = this.controlsColumn(columns);
-      const shrinkEnd = start + PaneRunner.SHRINK_LABEL.length;
-      if (column >= start && column < shrinkEnd) {
+      const moveEnd = start + this.moveLabel().length;
+      const shrinkEnd = moveEnd + PaneRunner.SHRINK_LABEL.length;
+      if (column >= start && column < moveEnd) {
+        this.move();
+        return;
+      }
+      if (column >= moveEnd && column < shrinkEnd) {
         this.resize(false);
         return;
       }
@@ -335,8 +355,24 @@ export class PaneRunner {
   /** Grows or shrinks this pane in herdr; herdr redraws the pane when its size changes. */
   private resize(grow: boolean): void {
     if (this.paneId) {
-      void HerdrPane.resize(this.paneId, grow);
+      void HerdrPane.resize(this.paneId, grow, this.besidePaneId);
     }
+  }
+
+  /** Moves the panel to the other side of the agent pane (right or below) and keeps that choice for the panel. */
+  private move(): void {
+    const paneId = this.paneId;
+    const besidePaneId = this.besidePaneId;
+    if (!paneId || !besidePaneId) {
+      return;
+    }
+    void (async () => {
+      const layout = await HerdrPane.layoutOf(besidePaneId);
+      const side = layout?.raw === undefined ? null : HerdrPane.sideOf(layout.raw, paneId, besidePaneId);
+      const next = side === 'down' || side === 'up' ? 'right' : 'down';
+      await this.store.write(PANEL_MOD, panelSideKey(besidePaneId), { side: next });
+      await HerdrPane.move(paneId, besidePaneId, next);
+    })().catch((error: unknown) => this.store.logError(PANEL_MOD, `move failed: ${error instanceof Error ? error.message : String(error)}`));
   }
 
   private open(target: string): void {

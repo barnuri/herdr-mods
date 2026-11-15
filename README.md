@@ -57,6 +57,10 @@ a narrow one.
 - **Resizable.** Drag the border between the panel and opencode, or press the `-` and `+` buttons in the
   panel's top right corner (or the `-` and `+` keys) to shrink or grow it by 5%. A mod that uses `+` or `-`
   for its own hotkey keeps them. The size you set stays until the panel moves to another side.
+  The panel grows toward opencode, so a panel below it changes height, even when another pane (a folders
+  sidebar) shares the tab.
+- **Move it below or beside.** The `⇅` button (or the `m` key) moves the panel between the right of
+  opencode and below it, and keeps that side for the panel. Below, `-` and `+` change its height.
 - **Native mods are easy to write.** `bun bin/new.ts <name>` scaffolds one. No config needed.
 - **herdr-owned panes.** A panel opens by itself once. After you close it (the `x` closes every tab),
   it stays closed until you run a mod's command.

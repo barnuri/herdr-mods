@@ -1,3 +1,11 @@
+/** A pane's position and size in the tab, in cells. */
+export interface PaneRect {
+  readonly x: number;
+  readonly y: number;
+  readonly width: number;
+  readonly height: number;
+}
+
 /** A herdr pane split beside another pane, through the `herdr` CLI. */
 export class HerdrPane {
   static readonly PLUGIN_ID = 'barnuri.mods';
@@ -96,8 +104,8 @@ export class HerdrPane {
     return areaWidth < HerdrPane.SIDE_BY_SIDE_MIN_COLUMNS ? 'down' : 'right';
   }
 
-  /** The tab's full width and each pane's width in it, or null when herdr cannot report the layout. */
-  static async layoutOf(paneId: string): Promise<{ areaWidth: number; widths: Map<string, number> } | null> {
+  /** The tab's full width, each pane's width in it, and the raw `pane layout` reply, or null when herdr cannot report it. */
+  static async layoutOf(paneId: string): Promise<{ areaWidth: number; widths: Map<string, number>; raw?: unknown } | null> {
     const layout = (await HerdrPane.herdr(['pane', 'layout', '--pane', paneId])) as
       | { result?: { layout?: { area?: { width?: unknown }; panes?: { pane_id?: unknown; rect?: { width?: unknown } }[] } } }
       | null;
@@ -111,7 +119,7 @@ export class HerdrPane {
         widths.set(pane.pane_id, pane.rect.width);
       }
     }
-    return { areaWidth, widths };
+    return { areaWidth, widths, raw: layout };
   }
 
   /** Moves a pane beside `besidePaneId` on `direction`, then gives the opencode pane its share back, as `open` does. */
@@ -122,25 +130,62 @@ export class HerdrPane {
 
   /**
    * The `pane resize` direction that grows (or shrinks) `paneId` by one step, or null when the layout is unknown.
-   * herdr moves the border on that side: a panel on the right grows to the `left`, a panel below grows `up`.
+   * herdr moves the border on that side, so a panel grows toward the opencode pane (`besidePaneId`): a panel on the
+   * right grows to the `left`, a panel below grows `up`. Without `besidePaneId` the side comes from the tab width.
    */
-  static resizeDirection(layout: unknown, paneId: string, grow: boolean): 'left' | 'right' | 'up' | 'down' | null {
-    const area = (layout as { result?: { layout?: { area?: { width?: number } } } } | null)?.result?.layout?.area;
-    const panes = (layout as { result?: { layout?: { panes?: { pane_id?: string; rect?: { width?: number } }[] } } } | null)?.result?.layout?.panes ?? [];
-    const width = panes.find((pane) => pane.pane_id === paneId)?.rect?.width;
-    if (typeof width !== 'number' || typeof area?.width !== 'number') {
+  static resizeDirection(layout: unknown, paneId: string, grow: boolean, besidePaneId?: string): 'left' | 'right' | 'up' | 'down' | null {
+    const side = HerdrPane.sideOf(layout, paneId, besidePaneId);
+    if (side === null) {
       return null;
     }
-    const beside: 'right' | 'down' = width < area.width ? 'right' : 'down';
-    if (beside === 'right') {
-      return grow ? 'left' : 'right';
+    const toward = { right: 'left', left: 'right', down: 'up', up: 'down' } as const;
+    return grow ? toward[side] : side;
+  }
+
+  /**
+   * Where `paneId` sits next to `besidePaneId` (the opencode pane), from their rectangles. Other panes in the tab
+   * (for example a folders sidebar) do not change the answer. Without `besidePaneId`, a panel narrower than the
+   * tab counts as `right` and a full-width one as `down`. Null when herdr does not report the pane.
+   */
+  static sideOf(layout: unknown, paneId: string, besidePaneId?: string): 'left' | 'right' | 'up' | 'down' | null {
+    const rects = HerdrPane.rectsOf(layout);
+    const panel = rects.get(paneId);
+    if (!panel) {
+      return null;
     }
-    return grow ? 'up' : 'down';
+    const beside = besidePaneId === undefined ? undefined : rects.get(besidePaneId);
+    if (beside) {
+      if (panel.x >= beside.x + beside.width) {
+        return 'right';
+      }
+      if (panel.x + panel.width <= beside.x) {
+        return 'left';
+      }
+      return panel.y >= beside.y + beside.height ? 'down' : 'up';
+    }
+    const area = (layout as { result?: { layout?: { area?: { width?: unknown } } } } | null)?.result?.layout?.area?.width;
+    if (typeof area !== 'number') {
+      return null;
+    }
+    return panel.width < area ? 'right' : 'down';
+  }
+
+  /** Every pane's rectangle in a `pane layout` reply, by pane id. */
+  static rectsOf(layout: unknown): Map<string, PaneRect> {
+    const panes = (layout as { result?: { layout?: { panes?: { pane_id?: unknown; rect?: Partial<Record<keyof PaneRect, unknown>> }[] } } } | null)?.result?.layout?.panes ?? [];
+    const rects = new Map<string, PaneRect>();
+    for (const pane of panes) {
+      const rect = pane.rect;
+      if (typeof pane.pane_id === 'string' && rect && typeof rect.x === 'number' && typeof rect.y === 'number' && typeof rect.width === 'number' && typeof rect.height === 'number') {
+        rects.set(pane.pane_id, { x: rect.x, y: rect.y, width: rect.width, height: rect.height });
+      }
+    }
+    return rects;
   }
 
   /** Grows or shrinks `paneId` by one step (`RESIZE_STEP`) on the side that faces the opencode pane. Never throws. */
-  static async resize(paneId: string, grow: boolean): Promise<void> {
-    const direction = HerdrPane.resizeDirection(await HerdrPane.herdr(['pane', 'layout', '--pane', paneId]), paneId, grow);
+  static async resize(paneId: string, grow: boolean, besidePaneId?: string): Promise<void> {
+    const direction = HerdrPane.resizeDirection(await HerdrPane.herdr(['pane', 'layout', '--pane', paneId]), paneId, grow, besidePaneId);
     if (direction) {
       await HerdrPane.herdr(['pane', 'resize', '--pane', paneId, '--direction', direction, '--amount', HerdrPane.RESIZE_STEP]);
     }

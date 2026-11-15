@@ -84,6 +84,40 @@ describe('HerdrPane.resizeDirection()', () => {
     expect(HerdrPane.resizeDirection(null, 'w1:p2', true)).toBeNull();
     expect(HerdrPane.resizeDirection(layout({ width: 36, height: 54, x: 44, y: 0 }), 'w1:p9', true)).toBeNull();
   });
+
+  it('grows a panel below the agent pane upward when a sidebar shares the tab', () => {
+    // A folders sidebar (p9) takes the left 40 columns, so the panel below opencode (p1) is not full width.
+    const tab = {
+      result: {
+        layout: {
+          area: { width: 120, height: 50 },
+          panes: [
+            { pane_id: 'w1:p9', rect: { x: 0, y: 0, width: 40, height: 50 } },
+            { pane_id: 'w1:p1', rect: { x: 40, y: 0, width: 80, height: 30 } },
+            { pane_id: 'w1:p2', rect: { x: 40, y: 30, width: 80, height: 20 } },
+          ],
+        },
+      },
+    };
+    expect(HerdrPane.sideOf(tab, 'w1:p2', 'w1:p1')).toBe('down');
+    expect(HerdrPane.resizeDirection(tab, 'w1:p2', true, 'w1:p1')).toBe('up');
+    expect(HerdrPane.resizeDirection(tab, 'w1:p2', false, 'w1:p1')).toBe('down');
+  });
+
+  it('grows a panel on the left of the agent pane toward the right', () => {
+    const tab = {
+      result: {
+        layout: {
+          area: { width: 120, height: 50 },
+          panes: [
+            { pane_id: 'w1:p2', rect: { x: 0, y: 0, width: 40, height: 50 } },
+            { pane_id: 'w1:p1', rect: { x: 40, y: 0, width: 80, height: 50 } },
+          ],
+        },
+      },
+    };
+    expect(HerdrPane.resizeDirection(tab, 'w1:p2', true, 'w1:p1')).toBe('right');
+  });
 });
 
 describe('StateStore', () => {

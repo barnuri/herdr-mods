@@ -1,4 +1,4 @@
-import { PANEL_MOD } from '../state/panelState.ts';
+import { PANEL_MOD, panelSideKey } from '../state/panelState.ts';
 import type { PanelRecord, PanelTab } from '../state/panelState.ts';
 import { StateStore } from '../state/stateStore.ts';
 import { HerdrPane } from './herdrPane.ts';
@@ -102,13 +102,16 @@ export class PaneLifecycle {
         if (!layout) {
           return;
         }
-        const wanted = HerdrPane.directionForWidth(layout.areaWidth);
+        const chosen = await this.chosenSide();
+        const wanted = chosen ?? HerdrPane.directionForWidth(layout.areaWidth);
         const width = layout.widths.get(panel);
+        const side = layout.raw === undefined ? null : HerdrPane.sideOf(layout.raw, panel, this.besidePaneId);
         if (width !== undefined) {
-          const current = width >= layout.areaWidth ? 'down' : 'right';
+          const current = side === null ? (width >= layout.areaWidth ? 'down' : 'right') : side === 'left' || side === 'right' ? 'right' : 'down';
           if (current !== wanted) {
-            // Move only once the new width has held for two checks, so two screens taking turns don't make the panel bounce.
-            if (this.pendingSide === wanted) {
+            // A side the person chose moves at once. A width change moves only once it has held for two checks,
+            // so two screens taking turns don't make the panel bounce.
+            if (chosen !== null || this.pendingSide === wanted) {
               this.pendingSide = undefined;
               await HerdrPane.move(panel, this.besidePaneId, wanted);
             } else {
@@ -145,6 +148,12 @@ export class PaneLifecycle {
   private async read(): Promise<PanelRecord | null> {
     const record = (await this.store.read(this.store.pathFor(PANEL_MOD, this.besidePaneId))) as PanelRecord | null;
     return record && Array.isArray(record.tabs) ? record : null;
+  }
+
+  /** The side the person picked with the panel's move button, or null to follow the tab width. */
+  private async chosenSide(): Promise<'right' | 'down' | null> {
+    const saved = (await this.store.read(this.store.pathFor(PANEL_MOD, panelSideKey(this.besidePaneId)))) as { side?: unknown } | null;
+    return saved?.side === 'right' || saved?.side === 'down' ? saved.side : null;
   }
 
   private async write(record: PanelRecord): Promise<void> {
