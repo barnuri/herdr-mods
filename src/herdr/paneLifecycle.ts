@@ -7,6 +7,8 @@ import { withPaneLock } from './paneLock.ts';
 export interface PanelOpenOptions {
   /** A forced open (the mod's command) selects the tab and reopens a closed panel; an automatic one does neither. */
   readonly isForced: boolean;
+  /** Open by itself only once per agent pane: when the person closed the panel, an automatic open leaves it closed. */
+  readonly isOnce?: boolean;
   /** The opencode process that owns the panel; the pane exits when it exits. */
   readonly parentPid: number;
 }
@@ -30,7 +32,7 @@ export class PaneLifecycle {
     return (await withPaneLock(this.besidePaneId, () => this.openLocked(tab, options))) ?? false;
   }
 
-  private async openLocked(tab: PanelTab, { isForced, parentPid }: PanelOpenOptions): Promise<boolean> {
+  private async openLocked(tab: PanelTab, { isForced, isOnce, parentPid }: PanelOpenOptions): Promise<boolean> {
     const panes = await HerdrPane.modPanesIn(this.besidePaneId);
     if (panes === null) {
       return false;
@@ -47,11 +49,18 @@ export class PaneLifecycle {
       await this.write(this.withTab(saved, tab, isForced));
       return true;
     }
+    // The panel is gone but this mod already had a tab in it: the person closed it. A once-only automatic open stays out.
+    if (isOnce === true && !isForced && saved?.tabs.some((item) => item.modId === tab.modId)) {
+      return false;
+    }
     // A new panel starts with only this tab. The record is written before the pane opens, so the pane starts on it.
     const record: PanelRecord = { tabs: [tab], focus: { modId: tab.modId, at: Date.now() } };
     await this.write(record);
     const env = { HERDR_MODS_PANEL: this.besidePaneId, HERDR_MODS_PARENT_PID: String(parentPid) };
     const paneId = await HerdrPane.open(this.besidePaneId, env, HerdrPane.title(tab.modId));
+    if (paneId === null && isOnce === true) {
+      await this.write(saved ?? { tabs: [], focus: null });
+    }
     return paneId !== null;
   }
 

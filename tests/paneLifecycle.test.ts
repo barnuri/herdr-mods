@@ -98,6 +98,18 @@ describe('PaneLifecycle', () => {
     expect(open).toHaveBeenCalledTimes(2);
   });
 
+  it('does not reopen a closed panel for a once-only automatic open, but a forced open does', async () => {
+    const { open, live } = stubHerdr(['w1:p2', 'w1:p3']);
+    const ONCE = { isForced: false, isOnce: true, parentPid: 0 };
+    expect(await lifecycle().open(tab('a'), ONCE)).toBe(true);
+    live.delete('w1:p2');
+
+    expect(await lifecycle().open(tab('a'), ONCE)).toBe(false);
+    expect(open).toHaveBeenCalledTimes(1);
+    expect(await lifecycle().open(tab('a'), { isForced: true, parentPid: 0 })).toBe(true);
+    expect(open).toHaveBeenCalledTimes(2);
+  });
+
   it('keeps the tab after the panel closes, so the reopened panel shows the same mod', async () => {
     const { live } = stubHerdr(['w1:p2', 'w1:p3']);
     await lifecycle().open(tab('a', 'k1'), AUTO);

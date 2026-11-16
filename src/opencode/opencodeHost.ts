@@ -149,7 +149,7 @@ export class OpencodeHost {
       return false;
     }
     const tab = { modId: mod.id, key, view: mod.pane.module, options };
-    const isOpen = await this.lifecycle.open(tab, { isForced, parentPid: process.pid });
+    const isOpen = await this.lifecycle.open(tab, { isForced, isOnce: !isForced, parentPid: process.pid });
     if (!isOpen && isForced) {
       this.toast(`${mod.id}: ${OpencodeHost.NOT_OPENED}`);
     }
