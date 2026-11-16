@@ -13,8 +13,6 @@ export interface PanelRecord {
   readonly tabs: readonly PanelTab[];
   /** The tab a forced open chose. `at` changes on every choice, so the pane follows it once. */
   readonly focus: { readonly modId: string; readonly at: number } | null;
-  /** The `<mod>:<key>` panes that opened by themselves. They stay closed after the person closes the panel. */
-  readonly autoOpened: readonly string[];
 }
 
 /** The state folder for panel records: one file per agent pane. */

@@ -50,6 +50,7 @@ a narrow one.
 - **Sub-agents roll up into the main session.** Sub-agent turns feed the main session's mod state.
   They never start a session or a panel of their own.
 - **Close it with `x`.** A button in the top right corner, like Claude Code. `Ctrl+C` works too.
+- **Scroll.** A view taller than the panel scrolls with the mouse wheel, the arrow keys, PgUp and PgDn, and Home and End. The last row shows the lines in view (`↑↓ 21-40 of 120`).
 - **Named after the mod.** Each tab shows its mod's name. The pane title reads `<mod name> mod` for the selected tab.
 - **Smart placement.** At least 140 columns wide, the panel sits on the right; narrower, below. It moves
   when the screen changes size, for example when you open the session from a phone or back on a PC.
@@ -62,8 +63,9 @@ a narrow one.
 - **Move it below or beside.** The `⇅` button (or the `m` key) moves the panel between the right of
   opencode and below it, and keeps that side for the panel. Below, `-` and `+` change its height.
 - **Native mods are easy to write.** `bun bin/new.ts <name>` scaffolds one. No config needed.
-- **herdr-owned panes.** A panel opens by itself once. After you close it (the `x` closes every tab),
-  it stays closed until you run a mod's command.
+- **herdr-owned panes.** A panel opens by itself when a mod has a turn to show, including after you close
+  it (the `x` hides every tab). Closing keeps each tab's pane-local state (for example the selected
+  iteration), so the reopened panel shows the same view.
 
 ## Install
 
@@ -263,7 +265,7 @@ sh <herdr-mods>/bin/bun.sh <herdr-mods>/bin/open.ts \
 ```
 
 The mod becomes a tab of the agent pane's mod panel. Each agent pane keeps one panel, and each mod one tab:
-the panel opens once by itself, and stays closed after the person closes it until `--force`.
+the panel opens by itself, also after the person closed it. `--force` opens it and selects the tab.
 
 ## Mods
 

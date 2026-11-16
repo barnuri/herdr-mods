@@ -88,25 +88,24 @@ describe('PaneLifecycle', () => {
     expect(record.focus?.at).toBeGreaterThan(before);
   });
 
-  it('stays closed after the person closes the panel, until a forced open', async () => {
+  it('opens by itself again after the person closed the panel', async () => {
     const { open, live } = stubHerdr(['w1:p2', 'w1:p3']);
     await lifecycle().open(tab('a'), AUTO);
     live.delete('w1:p2');
 
-    expect(await lifecycle().open(tab('a'), AUTO)).toBe(false);
-    expect(await lifecycle().open(tab('a'), FORCED)).toBe(true);
+    expect(await lifecycle().open(tab('a'), AUTO)).toBe(true);
 
     expect(open).toHaveBeenCalledTimes(2);
   });
 
-  it('opens by itself again in a new opencode process, after the person closed it before', async () => {
-    const { open, live } = stubHerdr(['w1:p2', 'w1:p3']);
-    await lifecycle().open(tab('a'), AUTO);
+  it('keeps the tab after the panel closes, so the reopened panel shows the same mod', async () => {
+    const { live } = stubHerdr(['w1:p2', 'w1:p3']);
+    await lifecycle().open(tab('a', 'k1'), AUTO);
     live.delete('w1:p2');
 
-    expect(await lifecycle().open(tab('a'), { isForced: false, parentPid: 77 })).toBe(true);
+    await lifecycle().open(tab('a', 'k1'), AUTO);
 
-    expect(open).toHaveBeenCalledTimes(2);
+    expect((await recordOf()).tabs).toEqual([tab('a', 'k1')]);
   });
 
   it('a forced open does not use up the automatic open of this process', async () => {

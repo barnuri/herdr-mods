@@ -3,6 +3,7 @@ import type { PanelRecord, PanelTab } from '../state/panelState.ts';
 import { PANEL_MOD, panelSideKey } from '../state/panelState.ts';
 import { StateStore } from '../state/stateStore.ts';
 import { TermRenderer } from '../render/termRenderer.ts';
+import { PaneScroll } from '../render/paneScroll.ts';
 import type { ClickRegion, TermFrame } from '../render/termRenderer.ts';
 import { HerdrPane } from '../herdr/herdrPane.ts';
 
@@ -36,14 +37,24 @@ export class PaneRunner {
   private static readonly MOVE_LABEL = ' \u21c5 ';
   private static readonly MOVE_KEY = 'm';
   private static readonly MOUSE_PRESS = /\x1b\[<0;(\d+);(\d+)M/g;
+  /** Wheel up (64) and wheel down (65) reports; mouse reporting is on, so the wheel arrives here. */
+  private static readonly MOUSE_WHEEL = /\x1b\[<(64|65);\d+;\d+M/g;
+  private static readonly KEYS_UP = new Set(['\x1b[A', '\x1bOA']);
+  private static readonly KEYS_DOWN = new Set(['\x1b[B', '\x1bOB']);
+  private static readonly KEY_PAGE_UP = '\x1b[5~';
+  private static readonly KEY_PAGE_DOWN = '\x1b[6~';
+  private static readonly KEYS_TOP = new Set(['\x1b[H', '\x1bOH', '\x1b[1~']);
+  private static readonly KEYS_BOTTOM = new Set(['\x1b[F', '\x1bOF', '\x1b[4~']);
 
   private readonly store = new StateStore();
   /** This pane's herdr id, when herdr runs it; the tab titles and the grow and shrink buttons need it. */
   private readonly paneId = process.env['HERDR_PANE_ID'] || undefined;
   /** The agent pane this panel sits beside; resizing and moving are measured against it. */
   private readonly besidePaneId = process.env['HERDR_MODS_PANEL'] || undefined;
-  /** Each mod's pane-local values, kept while its tab is not selected. */
+  /** Each tab's pane-local values by `<mod id>:<key>`, saved beside its state so a reopened pane shows them again. */
   private readonly locals = new Map<string, Map<string, unknown>>();
+  /** The tabs whose saved locals were read, so a reload does not read them again. */
+  private readonly loadedLocals = new Set<string>();
   /** The views loaded so far, by path; null when a view failed to load. */
   private readonly views = new Map<string, ModPaneView | null>();
   /** The last published state of each tab, by `<mod id>:<key>`. */
@@ -55,6 +66,10 @@ export class PaneRunner {
   /** The `focus.at` already applied, so a forced open selects its tab once. */
   private focusSeen = 0;
   private tabRegions: TabRegion[] = [];
+  /** The first frame line each tab shows, by `<mod id>:<key>`; a view taller than the pane scrolls. */
+  private readonly scrolls = new Map<string, number>();
+  /** The first frame line the pane shows now; a click on a body row maps through it. */
+  private shownOffset = 0;
   /** The rows the tab row takes above the view: 1 when there are tabs to switch between, else 0. */
   private barRows = 0;
   private frame: TermFrame | null = null;
@@ -90,6 +105,7 @@ export class PaneRunner {
       this.record = next;
       for (const tab of next.tabs) {
         await this.loadView(tab);
+        await this.loadLocals(tab);
       }
       for (const tab of next.tabs) {
         const state = await this.store.read(this.store.pathFor(tab.modId, tab.key));
@@ -125,6 +141,27 @@ export class PaneRunner {
     }
   }
 
+  private async loadLocals(tab: PanelTab): Promise<void> {
+    if (this.loadedLocals.has(tabId(tab))) {
+      return;
+    }
+    this.loadedLocals.add(tabId(tab));
+    const saved = await this.store.read(this.localsPath(tab));
+    if (saved === null || typeof saved !== 'object' || Array.isArray(saved)) {
+      return;
+    }
+    const locals = this.localsOf(tab);
+    for (const [name, value] of Object.entries(saved)) {
+      if (!locals.has(name)) {
+        locals.set(name, value);
+      }
+    }
+  }
+
+  private localsPath(tab: PanelTab): string {
+    return this.store.pathFor(tab.modId, `${tab.key}.locals`);
+  }
+
   private draw(isForced: boolean): void {
     if (this.isTakenOver) {
       return;
@@ -135,7 +172,7 @@ export class PaneRunner {
     const bar = this.record && this.record.tabs.length > 1 ? this.tabBar(columns) : { text: '', regions: [] };
     this.tabRegions = bar.regions;
     this.barRows = bar.regions.length > 0 ? 1 : 0;
-    const selected = this.record?.tabs.find((tab) => tab.modId === this.selectedId);
+    const selected = this.selectedTab();
     const view = selected ? this.views.get(selected.view) : undefined;
     let body: string[] = [];
     if (selected && view) {
@@ -147,9 +184,10 @@ export class PaneRunner {
         return;
       }
       this.frame = new TermRenderer(columns, (target) => this.open(target)).render(tree);
-      body = this.frame.lines.slice(0, rows - this.barRows);
+      body = this.bodyOf(selected, rows - this.barRows);
     } else {
       this.frame = null;
+      this.shownOffset = 0;
     }
     const all = this.barRows > 0 ? [bar.text, ...body] : body;
     const lines = this.noticeText ? [...all.slice(0, rows - 1), `\x1b[2m${this.noticeText}\x1b[0m`] : all.slice(0, rows);
@@ -160,6 +198,58 @@ export class PaneRunner {
     this.lastText = text;
     const controlsColumn = this.controlsColumn(columns) + 1;
     process.stdout.write(`\x1b[H\x1b[2J${text}\x1b[0m\x1b[1;${controlsColumn}H\x1b[0;1m${this.controlsLabel()}\x1b[0m`);
+  }
+
+  /** The selected tab, when the record holds it. */
+  private selectedTab(): PanelTab | undefined {
+    return this.record?.tabs.find((tab) => tab.modId === this.selectedId);
+  }
+
+  /** The view's lines that fit `visible` rows from the tab's scroll offset; an overflowing view ends with its position row. */
+  private bodyOf(tab: PanelTab, visible: number): string[] {
+    const lines = this.frame?.lines ?? [];
+    const offset = PaneScroll.clamp(this.scrolls.get(tabId(tab)) ?? 0, visible, lines.length);
+    this.scrolls.set(tabId(tab), offset);
+    this.shownOffset = offset;
+    const bodyRows = PaneScroll.bodyRows(visible, lines.length);
+    const body = lines.slice(offset, offset + bodyRows);
+    if (lines.length > visible) {
+      body.push(`\x1b[2m${PaneScroll.indicator(offset, bodyRows, lines.length)}\x1b[0m`);
+    }
+    return body;
+  }
+
+  /** Scrolls the selected view by `lines`, clamped to its ends. `Infinity` jumps to an end. */
+  private scrollBy(lines: number): void {
+    const selected = this.selectedTab();
+    if (!selected || !this.frame) {
+      return;
+    }
+    const visible = (process.stdout.rows ?? 24) - this.barRows;
+    const offset = PaneScroll.clamp(this.shownOffset + lines, visible, this.frame.lines.length);
+    this.scrolls.set(tabId(selected), offset);
+    this.draw(true);
+  }
+
+  /** Scrolls by a key: arrows one line, page up and down a screen, Home and End to the ends. */
+  private scrollKey(key: string): boolean {
+    const page = Math.max(1, (process.stdout.rows ?? 24) - this.barRows - 1);
+    if (PaneRunner.KEYS_UP.has(key)) {
+      this.scrollBy(-1);
+    } else if (PaneRunner.KEYS_DOWN.has(key)) {
+      this.scrollBy(1);
+    } else if (key === PaneRunner.KEY_PAGE_UP) {
+      this.scrollBy(-page);
+    } else if (key === PaneRunner.KEY_PAGE_DOWN) {
+      this.scrollBy(page);
+    } else if (PaneRunner.KEYS_TOP.has(key)) {
+      this.scrollBy(-Infinity);
+    } else if (PaneRunner.KEYS_BOTTOM.has(key)) {
+      this.scrollBy(Infinity);
+    } else {
+      return false;
+    }
+    return true;
   }
 
   /** The top row: one tab per mod, the selected one inverted. Tabs stop before the top right buttons. */
@@ -206,10 +296,11 @@ export class PaneRunner {
       key: tab.key,
       options: tab.options,
       local: <Value>(name: string, initial: Value) => {
-        const locals = this.localsOf(tab.modId);
+        const locals = this.localsOf(tab);
         const value = (locals.has(name) ? locals.get(name) : initial) as Value;
         const set = (next: Value): void => {
           locals.set(name, next);
+          void this.saveLocals(tab, locals);
           this.draw(true);
         };
         return [value, set] as const;
@@ -234,13 +325,22 @@ export class PaneRunner {
     };
   }
 
-  private localsOf(modId: string): Map<string, unknown> {
-    let locals = this.locals.get(modId);
+  private localsOf(tab: PanelTab): Map<string, unknown> {
+    let locals = this.locals.get(tabId(tab));
     if (!locals) {
       locals = new Map();
-      this.locals.set(modId, locals);
+      this.locals.set(tabId(tab), locals);
     }
     return locals;
+  }
+
+  /** Writes the tab's pane-local values, so closing the panel and opening it again keeps them. */
+  private async saveLocals(tab: PanelTab, locals: Map<string, unknown>): Promise<void> {
+    try {
+      await this.store.write(tab.modId, `${tab.key}.locals`, Object.fromEntries(locals));
+    } catch (error) {
+      void this.store.logError(tab.modId, `save locals failed: ${error instanceof Error ? error.message : String(error)}`);
+    }
   }
 
   private async takeover(argv: readonly string[]): Promise<number> {
@@ -272,7 +372,10 @@ export class PaneRunner {
     for (const match of data.matchAll(PaneRunner.MOUSE_PRESS)) {
       this.click(Number(match[1]) - 1, Number(match[2]) - 1);
     }
-    const key = data.replace(PaneRunner.MOUSE_PRESS, '');
+    for (const match of data.matchAll(PaneRunner.MOUSE_WHEEL)) {
+      this.scrollBy(match[1] === '64' ? -PaneScroll.WHEEL_LINES : PaneScroll.WHEEL_LINES);
+    }
+    const key = data.replace(PaneRunner.MOUSE_PRESS, '').replace(PaneRunner.MOUSE_WHEEL, '');
     if (PaneRunner.QUIT_KEYS.has(key)) {
       process.exit(0);
     }
@@ -287,6 +390,8 @@ export class PaneRunner {
       this.resize(false);
     } else if (key === PaneRunner.MOVE_KEY) {
       this.move();
+    } else {
+      this.scrollKey(key);
     }
   }
 
@@ -319,7 +424,8 @@ export class PaneRunner {
       }
       return;
     }
-    const hit = this.frame?.regions.find((region: ClickRegion) => region.row === row - this.barRows && column >= region.start && column < region.end);
+    const frameRow = row - this.barRows + this.shownOffset;
+    const hit = this.frame?.regions.find((region: ClickRegion) => region.row === frameRow && column >= region.start && column < region.end);
     hit?.onPress();
   }
 

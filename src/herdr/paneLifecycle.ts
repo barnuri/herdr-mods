@@ -7,15 +7,14 @@ import { withPaneLock } from './paneLock.ts';
 export interface PanelOpenOptions {
   /** A forced open (the mod's command) selects the tab and reopens a closed panel; an automatic one does neither. */
   readonly isForced: boolean;
-  /** The opencode process that owns the panel. */
+  /** The opencode process that owns the panel; the pane exits when it exits. */
   readonly parentPid: number;
 }
 
 /**
  * The mod panel beside one agent pane: one herdr pane per tab, holding a tab per active mod. herdr is the
  * source of truth for whether the panel lives; its tabs live in a record file that the pane process reads.
- * A mod opens by itself once per opencode process. After the person closes the panel, only a forced open
- * brings it back, until the next opencode start (so a resumed session opens its panel again).
+ * A mod opens by itself whenever it has a turn to show, including after the person closed the panel.
  */
 export class PaneLifecycle {
   private relayouting = false;
@@ -40,46 +39,30 @@ export class PaneLifecycle {
     // A tab holds one mod panel: close any extra one (from before this guard, or from a race).
     await Promise.all(extra.map((paneId) => HerdrPane.close(paneId)));
     const saved = await this.read();
-    const paneKey = `${tab.modId}:${tab.key}`;
-    const autoKey = `${paneKey}@${parentPid}`;
-    const autoOpened = saved?.autoOpened ?? [];
     if (panel !== undefined) {
       const shown = saved?.tabs.find((item) => item.modId === tab.modId);
       if (!isForced && shown?.key === tab.key) {
         return true;
       }
-      if (!isForced && autoOpened.includes(autoKey)) {
-        return false;
-      }
-      await this.write(this.withTab(saved, tab, isForced ? null : autoKey, isForced));
+      await this.write(this.withTab(saved, tab, isForced));
       return true;
     }
-    if (!isForced && autoOpened.includes(autoKey)) {
-      return false;
-    }
     // A new panel starts with only this tab. The record is written before the pane opens, so the pane starts on it.
-    const record: PanelRecord = { tabs: [tab], focus: { modId: tab.modId, at: Date.now() }, autoOpened };
+    const record: PanelRecord = { tabs: [tab], focus: { modId: tab.modId, at: Date.now() } };
     await this.write(record);
     const env = { HERDR_MODS_PANEL: this.besidePaneId, HERDR_MODS_PARENT_PID: String(parentPid) };
     const paneId = await HerdrPane.open(this.besidePaneId, env, HerdrPane.title(tab.modId));
-    if (!paneId) {
-      return false;
-    }
-    if (!isForced) {
-      await this.write({ ...record, autoOpened: [...new Set([...autoOpened, autoKey])] });
-    }
-    return true;
+    return paneId !== null;
   }
 
   /** The record with `tab` added, or replacing the tab of the same mod (one tab per mod), and focused when forced. */
-  private withTab(saved: PanelRecord | null, tab: PanelTab, autoKey: string | null, isForced: boolean): PanelRecord {
-    const base: PanelRecord = saved ?? { tabs: [], focus: null, autoOpened: [] };
+  private withTab(saved: PanelRecord | null, tab: PanelTab, isForced: boolean): PanelRecord {
+    const base: PanelRecord = saved ?? { tabs: [], focus: null };
     const index = base.tabs.findIndex((item) => item.modId === tab.modId);
     const tabs = index >= 0 ? base.tabs.map((item, at) => (at === index ? tab : item)) : [...base.tabs, tab];
     return {
       tabs,
       focus: isForced ? { modId: tab.modId, at: Math.max(Date.now(), (base.focus?.at ?? 0) + 1) } : base.focus,
-      autoOpened: autoKey === null ? base.autoOpened : [...new Set([...base.autoOpened, autoKey])],
     };
   }
 

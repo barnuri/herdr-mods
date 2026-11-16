@@ -54,7 +54,7 @@ try {
   } else if (modId && viewPath && key) {
     logId = modId;
     const options = JSON.parse(argument('--options') ?? '{}') as Record<string, unknown>;
-    const record: PanelRecord = { tabs: [{ modId, key, view: viewPath, options }], focus: null, autoOpened: [] };
+    const record: PanelRecord = { tabs: [{ modId, key, view: viewPath, options }], focus: null };
     loadRecord = async () => record;
   } else {
     console.error(
