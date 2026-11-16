@@ -269,7 +269,7 @@ the panel opens by itself, also after the person closed it. `--force` opens it a
 
 ## Mods
 
-- **summarize** ([harness-status-line](https://github.com/barnuri/harness-status-line)): a recap of
+- **summarize** ([harness-status-line](https://github.com/barnuri/harness-status-line)): a summarize of
   every turn, with session repos, PRs, commits, skills and the session Q&A. It comes as a herdr mod
   (`opencode-summarize/`) and as a Claude Code mod (`claude-mods/summarize`).
 - **orch-graph** ([orch-skill](https://github.com/barnuri/orch-skill)): the live DAG of the active

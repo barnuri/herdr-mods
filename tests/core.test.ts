@@ -139,13 +139,13 @@ describe('ModFolder', () => {
     const root = mkdtempSync(join(tmpdir(), 'herdr-mods-dir-'));
     mkdirSync(join(root, 'hello'));
     writeFileSync(join(root, 'hello', 'mod.ts'), '');
-    mkdirSync(join(root, 'recap', '.claude-plugin'), { recursive: true });
-    writeFileSync(join(root, 'recap', '.claude-plugin', 'plugin.json'), '{}');
+    mkdirSync(join(root, 'summarize', '.claude-plugin'), { recursive: true });
+    writeFileSync(join(root, 'summarize', '.claude-plugin', 'plugin.json'), '{}');
     mkdirSync(join(root, 'notes'));
 
     expect(await new ModFolder(root).list()).toEqual([
       { kind: 'herdr', path: join(root, 'hello', 'mod.ts') },
-      { kind: 'claude', path: join(root, 'recap') },
+      { kind: 'claude', path: join(root, 'summarize') },
     ]);
     expect(await new ModFolder(join(root, 'missing')).list()).toEqual([]);
   });
